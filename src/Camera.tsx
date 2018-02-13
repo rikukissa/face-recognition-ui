@@ -56,7 +56,7 @@ export class Camera extends React.Component<
 
     const tracker = new tracking.ObjectTracker("face") as any;
     tracker.setInitialScale(4);
-    tracker.setStepSize(2);
+    tracker.setStepSize(0.5);
     tracker.setEdgesDensity(0.1);
     tracking.track($video, tracker, { camera: true });
 
