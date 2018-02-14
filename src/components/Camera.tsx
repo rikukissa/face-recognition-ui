@@ -2,7 +2,7 @@ import * as React from "react";
 import styled from "styled-components";
 import "tracking";
 import "tracking/build/data/face";
-import { getStream } from "./lib/camera";
+import { getStream } from "../utils/camera";
 
 declare const tracking: any;
 
