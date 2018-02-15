@@ -4,7 +4,7 @@ import {
   Action as RecognitionAction
 } from "../recognition/logic";
 export interface IState {
-  currentView: "home" | "dashboard";
+  currentView: "home" | "dashboard" | "who is this";
 }
 
 export enum TypeKeys {
@@ -23,6 +23,9 @@ export function reducer(
 ): IState {
   switch (action.type) {
     case RecognitionActionTypes.FACE_RECOGNISED:
+      if (action.payload.names.length === 0) {
+        return { ...state, currentView: "who is this" };
+      }
       return { ...state, currentView: "dashboard" };
   }
   return state;

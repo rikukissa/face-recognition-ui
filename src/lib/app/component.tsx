@@ -64,6 +64,11 @@ export class App extends React.Component<
             <h1>{this.props.currentlyRecognized}</h1>
           </Overlay>
         )}
+        {this.props.currentView === "who is this" && (
+          <Overlay>
+            <h1>Who is this?</h1>
+          </Overlay>
+        )}
         <Input>
           <input
             type="text"

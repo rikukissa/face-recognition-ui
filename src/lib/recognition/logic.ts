@@ -108,11 +108,7 @@ export const recognizeFaces = (detection: IDetection) => async (
     return;
   }
 
-  // New face recognized
-  if (names.length > 0) {
-    dispatch(facesRecognised(names));
-    return;
-  }
+  dispatch(facesRecognised(names));
 };
 
 /*
