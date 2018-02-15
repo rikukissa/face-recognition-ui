@@ -4,10 +4,14 @@ import thunk from "redux-thunk";
 // Features
 import {
   reducer as recognition,
-  middleware as recognitionMiddleware,
   IState as IRecognitionState
 } from "../lib/recognition/logic";
-import { reducer as app, IState as IAppState } from "../lib/app/logic";
+
+import {
+  reducer as app,
+  IState as IAppState,
+  middleware as appMiddleware
+} from "../lib/app/logic";
 
 export interface IApplicationState {
   app: IAppState;
@@ -19,5 +23,5 @@ export const store = createStore(
     app,
     recognition
   }),
-  applyMiddleware(thunk, recognitionMiddleware)
+  applyMiddleware(thunk, appMiddleware)
 );

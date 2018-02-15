@@ -1,28 +1,25 @@
-import { Middleware } from "redux";
 import { Dispatch } from "react-redux";
 import { createModelForFace, recognize } from "../api";
 import { IApplicationState } from "../../store";
 
-// TODO
+// TODO feels a bit nasty to refer to the event type from here
 import { IDetection } from "../../components/Camera";
 
 export interface IState {
-  currentlyRecognized: null | string;
+  currentlyRecognized: string[];
   latestDetectionImageWithFaces: null | Blob;
   currentNumberOfFaces: null | number;
 }
 
-type Action =
+export type Action =
   | IFaceDetectedAction
-  | IFaceRecognisedAction
-  | IFacesAmountChangedAction
-  | IClearCurrentRecognitionAction;
+  | IFacesRecognisedAction
+  | IFacesAmountChangedAction;
 
 export enum TypeKeys {
   FACE_DETECTED = "recognition/FACE_DETECTED",
   FACE_RECOGNISED = "recognition/FACE_RECOGNISED",
-  FACES_AMOUNT_CHANGED = "recognition/FACES_AMOUNT_CHANGED",
-  CLEAR_CURRENT_RECOGNITION = "recognition/CLEAR_CURRENT_RECOGNITION"
+  FACES_AMOUNT_CHANGED = "recognition/FACES_AMOUNT_CHANGED"
 }
 
 interface IFaceDetectedAction {
@@ -37,15 +34,15 @@ function faceDetected(image: Blob): IFaceDetectedAction {
   };
 }
 
-interface IFaceRecognisedAction {
+interface IFacesRecognisedAction {
   type: TypeKeys.FACE_RECOGNISED;
-  payload: { name: string };
+  payload: { names: string[] };
 }
 
-function faceRecognised(name: string): IFaceRecognisedAction {
+function facesRecognised(names: string[]): IFacesRecognisedAction {
   return {
     type: TypeKeys.FACE_RECOGNISED,
-    payload: { name }
+    payload: { names }
   };
 }
 
@@ -58,15 +55,6 @@ function facesAmountChanged(amount: number): IFacesAmountChangedAction {
   return {
     type: TypeKeys.FACES_AMOUNT_CHANGED,
     payload: { amount }
-  };
-}
-interface IClearCurrentRecognitionAction {
-  type: TypeKeys.CLEAR_CURRENT_RECOGNITION;
-}
-
-function clearCurrentRecognition(): IClearCurrentRecognitionAction {
-  return {
-    type: TypeKeys.CLEAR_CURRENT_RECOGNITION
   };
 }
 
@@ -107,16 +95,22 @@ export const recognizeFaces = (detection: IDetection) => async (
 
   // Recognized face still in the picture
   if (
-    state.currentlyRecognized &&
-    names.indexOf(state.currentlyRecognized) > -1
+    state.currentlyRecognized.length > 0 &&
+    names.indexOf(state.currentlyRecognized[0]) > -1
   ) {
-    dispatch(faceRecognised(names[0]));
+    // Places current face to the beginning of the list
+    dispatch(
+      facesRecognised([
+        state.currentlyRecognized[0],
+        ...names.filter(name => name !== state.currentlyRecognized[0])
+      ])
+    );
     return;
   }
 
   // New face recognized
   if (names.length > 0) {
-    dispatch(faceRecognised(names[0]));
+    dispatch(facesRecognised(names));
     return;
   }
 };
@@ -127,7 +121,7 @@ export const recognizeFaces = (detection: IDetection) => async (
 
 const initialState = {
   latestDetectionImageWithFaces: null,
-  currentlyRecognized: null,
+  currentlyRecognized: [],
   currentNumberOfFaces: null
 };
 
@@ -137,10 +131,7 @@ export function reducer(state: IState = initialState, action: Action) {
       return { ...state, latestDetectionImageWithFaces: action.payload.image };
 
     case TypeKeys.FACE_RECOGNISED:
-      return { ...state, currentlyRecognized: action.payload.name };
-
-    case TypeKeys.CLEAR_CURRENT_RECOGNITION:
-      return { ...state, currentlyRecognized: null };
+      return { ...state, currentlyRecognized: action.payload.names };
 
     case TypeKeys.FACES_AMOUNT_CHANGED:
       return { ...state, currentNumberOfFaces: action.payload.amount };
@@ -151,23 +142,3 @@ export function reducer(state: IState = initialState, action: Action) {
 
   return state;
 }
-
-export const middleware: Middleware = api => next => {
-  let timeout: number;
-
-  return (action: any) => {
-    if (
-      action.type === TypeKeys.FACES_AMOUNT_CHANGED &&
-      action.payload.amount === 0
-    ) {
-      if (timeout) {
-        window.clearTimeout(timeout);
-      }
-      timeout = window.setTimeout(
-        () => api.dispatch(clearCurrentRecognition()),
-        5000
-      );
-    }
-    return next(action);
-  };
-};

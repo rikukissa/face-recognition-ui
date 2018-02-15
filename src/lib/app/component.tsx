@@ -1,6 +1,7 @@
 import * as React from "react";
 import styled from "styled-components";
 import { Camera, IDetection } from "../../components/Camera";
+import { IState } from "./logic";
 
 const Container = styled.div`
   position: relative;
@@ -26,6 +27,7 @@ const Input = styled.div`
 export interface IProps {
   currentlyRecognized: null | string;
   latestDetectionImageWithFaces: null | Blob;
+  currentView: IState["currentView"];
 }
 
 export interface IDispatchProps {
@@ -40,28 +42,6 @@ export class App extends React.Component<
   public state = {
     name: ""
   };
-  /*
-   * Clear user specific UI elements after 10 seconds
-   */
-
-  // private clearTimeout: null | number = null;
-
-  // private clear = () => {
-  //   this.setState({ currentlyRecognized: null });
-  // };
-
-  // private createClearTimer = () => {
-  //   if (this.clearTimeout) {
-  //     window.clearTimeout(this.clearTimeout);
-  //   }
-  //   this.clearTimeout = window.setTimeout(this.clear, 10000);
-  // };
-
-  // private stopClearTimer = () => {
-  //   if (this.clearTimeout) {
-  //     window.clearTimeout(this.clearTimeout);
-  //   }
-  // };
 
   /*
    * Face addition stuff
@@ -79,7 +59,7 @@ export class App extends React.Component<
     return (
       <Container>
         <Camera onFacesDetected={this.props.recognizeFaces} />
-        {this.props.currentlyRecognized && (
+        {this.props.currentView === "dashboard" && (
           <Overlay>
             <h1>{this.props.currentlyRecognized}</h1>
           </Overlay>

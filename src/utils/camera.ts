@@ -3,7 +3,7 @@ export function getStream() {
     navigator.getUserMedia(
       { video: true, audio: false },
       stream => resolve(stream),
-      err => reject(err)
+      err => console.log("wya", err.message) || reject(err)
     );
   });
 }

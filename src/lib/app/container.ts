@@ -5,7 +5,8 @@ import { recognizeFaces, submitFace } from "../recognition/logic";
 
 function mapStateToProps(state: IApplicationState) {
   return {
-    currentlyRecognized: state.recognition.currentlyRecognized,
+    currentView: state.app.currentView,
+    currentlyRecognized: state.recognition.currentlyRecognized[0],
     latestDetectionImageWithFaces:
       state.recognition.latestDetectionImageWithFaces
   };

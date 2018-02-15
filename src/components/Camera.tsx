@@ -19,10 +19,9 @@ const Video = styled.video`
   top: -240px;
   left: -320px;
 `;
+
 const Canvas = styled.canvas`
   width: 100%;
-  position: absolute;
-  bottom: 0;
 `;
 
 export interface IFaceRect {
@@ -84,11 +83,17 @@ export class Camera extends React.Component<
   private $canvas: HTMLCanvasElement;
 
   public async componentDidMount() {
-    const stream = await getStream();
+    let stream;
+    try {
+      stream = await getStream();
+    } catch (error) {
+      throw error;
+    }
 
     this.$video.setAttribute("width", "320");
     this.$video.setAttribute("height", "240");
     this.$video.setAttribute("autoplay", "true");
+
     this.$video.src = window.URL.createObjectURL(stream);
 
     this.$canvas.setAttribute("width", "320");
