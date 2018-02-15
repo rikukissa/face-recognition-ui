@@ -14,12 +14,14 @@ export interface IState {
 export type Action =
   | IFaceDetectedAction
   | IFacesRecognisedAction
-  | IFacesAmountChangedAction;
+  | IFacesAmountChangedAction
+  | IFaceSavedAction;
 
 export enum TypeKeys {
   FACE_DETECTED = "recognition/FACE_DETECTED",
   FACE_RECOGNISED = "recognition/FACE_RECOGNISED",
-  FACES_AMOUNT_CHANGED = "recognition/FACES_AMOUNT_CHANGED"
+  FACES_AMOUNT_CHANGED = "recognition/FACES_AMOUNT_CHANGED",
+  FACE_SAVED = "recognition/FACE_SAVED"
 }
 
 interface IFaceDetectedAction {
@@ -57,6 +59,15 @@ function facesAmountChanged(amount: number): IFacesAmountChangedAction {
     payload: { amount }
   };
 }
+interface IFaceSavedAction {
+  type: TypeKeys.FACE_SAVED;
+}
+
+function faceSaved(): IFaceSavedAction {
+  return {
+    type: TypeKeys.FACE_SAVED
+  };
+}
 
 /*
  * Exported actions
@@ -71,6 +82,8 @@ export const submitFace = (name: string) => async (
     return;
   }
   await createModelForFace(name, state.latestDetectionImageWithFaces);
+
+  dispatch(faceSaved());
 };
 
 export const recognizeFaces = (detection: IDetection) => async (
@@ -131,6 +144,9 @@ export function reducer(state: IState = initialState, action: Action) {
 
     case TypeKeys.FACES_AMOUNT_CHANGED:
       return { ...state, currentNumberOfFaces: action.payload.amount };
+
+    case TypeKeys.FACE_SAVED:
+      return { ...state, currentNumberOfFaces: null };
 
     default:
       break;

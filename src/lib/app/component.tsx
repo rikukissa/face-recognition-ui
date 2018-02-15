@@ -2,6 +2,7 @@ import * as React from "react";
 import styled from "styled-components";
 import { Camera, IDetection } from "../../components/Camera";
 import { IState } from "./logic";
+import { WhoIsThis } from "./views/WhoIsThis";
 
 const Container = styled.div`
   position: relative;
@@ -16,14 +17,6 @@ const Overlay = styled.div`
   background: #abffab;
 `;
 
-const Input = styled.div`
-  position: fixed;
-  left: 0;
-  bottom: 0;
-  padding: 1em;
-  background: #fff;
-`;
-
 export interface IProps {
   currentlyRecognized: null | string;
   latestDetectionImageWithFaces: null | Blob;
@@ -35,48 +28,29 @@ export interface IDispatchProps {
   submitFace: (name: string) => void;
 }
 
-export class App extends React.Component<
-  IProps & IDispatchProps,
-  { name: string }
-> {
-  public state = {
-    name: ""
-  };
-
-  /*
-   * Face addition stuff
-   */
-
-  private storeName = (event: any) => {
-    this.setState({ name: event.target.value });
-  };
-
-  private submitFace = () => {
-    this.props.submitFace(this.state.name);
+export class App extends React.Component<IProps & IDispatchProps> {
+  private submitFace = (name: string) => {
+    this.props.submitFace(name);
   };
 
   public render() {
     return (
       <Container>
-        <Camera onFacesDetected={this.props.recognizeFaces} />
+        {this.props.currentView === "home" && (
+          <Camera onFacesDetected={this.props.recognizeFaces} />
+        )}
+
         {this.props.currentView === "dashboard" && (
           <Overlay>
             <h1>{this.props.currentlyRecognized}</h1>
           </Overlay>
         )}
         {this.props.currentView === "who is this" && (
-          <Overlay>
-            <h1>Who is this?</h1>
-          </Overlay>
-        )}
-        <Input>
-          <input
-            type="text"
-            onChange={this.storeName}
-            value={this.state.name}
+          <WhoIsThis
+            onSave={this.submitFace}
+            image={this.props.latestDetectionImageWithFaces}
           />
-          <button onClick={this.submitFace}>Submit face</button>
-        </Input>
+        )}
       </Container>
     );
   }

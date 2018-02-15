@@ -5,6 +5,7 @@
   "dependencies": {
     "@types/react-redux": "^5.0.15",
     "@types/redux-thunk": "^2.1.0",
+    "annyang": "^2.6.0",
     "axios": "^0.17.1",
     "prettier": "^1.10.2",
     "react": "^16.2.0",

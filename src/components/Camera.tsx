@@ -81,8 +81,12 @@ export class Camera extends React.Component<
 > {
   private $video: HTMLVideoElement;
   private $canvas: HTMLCanvasElement;
+  private tracker: any;
+  private mounted: boolean;
 
   public async componentDidMount() {
+    this.mounted = true;
+
     let stream;
     try {
       stream = await getStream();
@@ -99,18 +103,18 @@ export class Camera extends React.Component<
     this.$canvas.setAttribute("width", "320");
     this.$canvas.setAttribute("height", "240");
 
-    const tracker = new tracking.ObjectTracker("face") as any;
+    this.tracker = new tracking.ObjectTracker("face") as any;
 
     // Smaller is more precise but slower
-    tracker.setStepSize(0.5);
+    this.tracker.setStepSize(0.5);
 
-    tracker.setInitialScale(4);
-    tracker.setEdgesDensity(0.1);
-    tracking.track(this.$video, tracker, { camera: true });
+    this.tracker.setInitialScale(4);
+    this.tracker.setEdgesDensity(0.1);
+    tracking.track(this.$video, this.tracker, { camera: true });
 
     const shouldEmit = createThrottler();
 
-    tracker.on("track", async (event: IDetectionEvent) => {
+    this.tracker.on("track", async (event: IDetectionEvent) => {
       /*
        * Tracking sometimes gives random empty results
        * even when there are faces in the picture
@@ -127,13 +131,19 @@ export class Camera extends React.Component<
 
     this.reflectVideoToCanvas();
   }
-
+  public componentWillUnmount() {
+    this.mounted = false;
+    this.tracker.removeAllListeners("track");
+  }
   /*
    * The reason I'm not just stretching the video is, that it would make
    * the face detection much slower
    * More pixels = more surfice to look for the face
    */
   private reflectVideoToCanvas = () => {
+    if (!this.mounted) {
+      return;
+    }
     const context = this.$canvas.getContext("2d") as CanvasRenderingContext2D;
     context.drawImage(
       this.$video,

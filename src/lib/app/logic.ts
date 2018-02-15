@@ -27,6 +27,8 @@ export function reducer(
         return { ...state, currentView: "who is this" };
       }
       return { ...state, currentView: "dashboard" };
+    case RecognitionActionTypes.FACE_SAVED:
+      return { ...state, currentView: "home" };
   }
   return state;
 }
