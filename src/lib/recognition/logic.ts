@@ -104,7 +104,11 @@ export const recognizeFaces = (detection: IDetection) => async (
 
   dispatch(facesAmountChanged(detection.amount));
 
-  const names = detection.amount === 0 ? [] : await recognize(detection.image);
+  if (detection.amount === 0) {
+    return;
+  }
+
+  const names = await recognize(detection.image);
 
   // Recognized face still in the picture
   if (

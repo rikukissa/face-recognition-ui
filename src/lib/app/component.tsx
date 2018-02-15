@@ -36,7 +36,10 @@ export class App extends React.Component<IProps & IDispatchProps> {
   public render() {
     return (
       <Container>
-        {this.props.currentView === "home" && (
+        {(this.props.currentView === "home" ||
+          // We want to keep on tracking while the dashboard is open
+          // to detect no faces in the image
+          this.props.currentView === "dashboard") && (
           <Camera onFacesDetected={this.props.recognizeFaces} />
         )}
 
