@@ -1,8 +1,10 @@
 import * as React from "react";
 import styled from "styled-components";
-import { Camera, IDetection } from "../../components/Camera";
+import { Camera } from "../../components/Camera";
 import { IState } from "./logic";
 import { WhoIsThis } from "./views/WhoIsThis";
+import { IDetection, withTracking } from "../../utils/withTracking";
+import { DEBUG } from "../../utils/config";
 
 const Container = styled.div`
   position: relative;
@@ -17,6 +19,13 @@ const Overlay = styled.div`
   background: #abffab;
 `;
 
+const DebugCamera = styled(Camera)`
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  z-index: 2;
+`;
+
 export interface IProps {
   currentlyRecognized: null | string;
   latestDetectionImageWithFaces: null | Blob;
@@ -27,6 +36,10 @@ export interface IDispatchProps {
   recognizeFaces: (event: IDetection) => void;
   submitFace: (name: string) => void;
 }
+
+const TrackingCamera = styled(withTracking(Camera))`
+  width: 100%;
+`;
 
 export class App extends React.Component<IProps & IDispatchProps> {
   private submitFace = (name: string) => {
@@ -40,7 +53,7 @@ export class App extends React.Component<IProps & IDispatchProps> {
           // We want to keep on tracking while the dashboard is open
           // to detect no faces in the image
           this.props.currentView === "dashboard") && (
-          <Camera onFacesDetected={this.props.recognizeFaces} />
+          <TrackingCamera onFacesDetected={this.props.recognizeFaces} />
         )}
 
         {this.props.currentView === "dashboard" && (
@@ -55,6 +68,7 @@ export class App extends React.Component<IProps & IDispatchProps> {
               image={this.props.latestDetectionImageWithFaces}
             />
           )}
+        {DEBUG && <DebugCamera />}
       </Container>
     );
   }

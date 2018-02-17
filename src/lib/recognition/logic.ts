@@ -1,9 +1,9 @@
 import { Dispatch } from "react-redux";
 import { createModelForFace, recognize } from "../api";
 import { IApplicationState } from "../../store";
+import { IDetection } from "../../utils/withTracking";
 
 // TODO feels a bit nasty to refer to the event type from here
-import { IDetection } from "../../components/Camera";
 
 export interface IState {
   currentlyRecognized: string[];
