@@ -53,9 +53,14 @@ function createThrottler() {
   };
 }
 
+interface ITrackingProps {
+  trackingStoppedForDebugging: boolean;
+  onFacesDetected: (data: IDetection) => void;
+}
+
 export function withTracking(WrappedComponent: React.ComponentClass<IProps>) {
   return class ComponentWithTracking extends React.Component<
-    { onFacesDetected: (data: IDetection) => void },
+    ITrackingProps,
     {}
   > {
     private tracker: any;
@@ -81,7 +86,7 @@ export function withTracking(WrappedComponent: React.ComponentClass<IProps>) {
        * Tracking sometimes gives random empty results
        * even when there are faces in the picture
        */
-        if (!shouldEmit(event)) {
+        if (!shouldEmit(event) || this.props.trackingStoppedForDebugging) {
           return;
         }
 

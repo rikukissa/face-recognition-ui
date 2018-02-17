@@ -38,7 +38,7 @@ $video.addEventListener(
 );
 
 if (DEBUG) {
-  $video.src = "./seinfeld.webm";
+  $video.src = "./sample.mp4";
   $video.setAttribute("loop", "false");
 } else {
   getStream().then(stream => {

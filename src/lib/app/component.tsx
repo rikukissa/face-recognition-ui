@@ -67,11 +67,13 @@ export interface IProps {
   currentView: IState["currentView"];
   latestDetection: IRecognitionState["latestDetection"];
   faceBuffer: IRecognitionState["faceBuffer"];
+  trackingStoppedForDebugging: IRecognitionState["trackingStoppedForDebugging"];
 }
 
 export interface IDispatchProps {
   facesDetected: (event: IDetection) => void;
   submitFace: (name: string) => void;
+  toggleTracking: () => void;
 }
 
 const TrackingCamera = styled(withTracking(Camera))`
@@ -90,7 +92,10 @@ export class App extends React.Component<IProps & IDispatchProps> {
           // We want to keep on tracking while the dashboard is open
           // to detect no faces in the image
           this.props.currentView === "dashboard") && (
-          <TrackingCamera onFacesDetected={this.props.facesDetected} />
+          <TrackingCamera
+            onFacesDetected={this.props.facesDetected}
+            trackingStoppedForDebugging={this.props.trackingStoppedForDebugging}
+          />
         )}
 
         {this.props.currentView === "dashboard" && (
@@ -115,6 +120,11 @@ export class App extends React.Component<IProps & IDispatchProps> {
                 ))}
                 <DebugFooter>
                   {this.props.latestDetection.amount} faces
+                  <button onClick={this.props.toggleTracking}>
+                    {this.props.trackingStoppedForDebugging
+                      ? "resume tracking"
+                      : "pause tracking"}
+                  </button>
                 </DebugFooter>
               </DebugCamera>
               <DebugFaceBuffer>

@@ -12,6 +12,7 @@ export type Action =
   | IFaceDetectedAction
   | IFacesDetectedAction
   | IFaceSavedAction
+  | IToggleTrackingAction
   | ISubmitFaceAction;
 
 export enum TypeKeys {
@@ -22,7 +23,8 @@ export enum TypeKeys {
   FACE_SAVED = "recognition/FACE_SAVED",
   FACE_RECOGNITION_FAILED = "recognition/FACE_RECOGNITION_FAILED",
   FACE_REAPPEARED = "recognition/FACE_REAPPEARED",
-  SUBMIT_FACE = "recognition/SUBMIT_FACE"
+  SUBMIT_FACE = "recognition/SUBMIT_FACE",
+  DEBUG_TOGGLE_TRACKING = "recognition/DEBUG_TOGGLE_TRACKING"
 }
 
 interface IFaceDetectedAction {
@@ -88,6 +90,15 @@ function faceReappeared(): IFaceReappearedAction {
 /*
 * Exported actions
 */
+interface IToggleTrackingAction {
+  type: TypeKeys.DEBUG_TOGGLE_TRACKING;
+}
+
+export function toggleTracking(): IToggleTrackingAction {
+  return {
+    type: TypeKeys.DEBUG_TOGGLE_TRACKING
+  };
+}
 
 interface ISubmitFaceAction {
   type: TypeKeys.SUBMIT_FACE;
@@ -111,6 +122,7 @@ export interface IState {
   faceBuffer: string[];
   recognitionInProgress: boolean;
   shouldRecognizePeople: boolean;
+  trackingStoppedForDebugging: boolean;
 }
 
 const initialState = {
@@ -120,7 +132,8 @@ const initialState = {
   currentNumberOfFaces: null,
   faceBuffer: [],
   recognitionInProgress: false,
-  shouldRecognizePeople: true
+  shouldRecognizePeople: true,
+  trackingStoppedForDebugging: false
 };
 
 export function reducer(state: IState = initialState, action: Action) {
@@ -205,6 +218,11 @@ export function reducer(state: IState = initialState, action: Action) {
           successActionCreator: faceSaved
         })
       );
+    case TypeKeys.DEBUG_TOGGLE_TRACKING:
+      return {
+        ...state,
+        trackingStoppedForDebugging: !state.trackingStoppedForDebugging
+      };
 
     default:
       return state;
