@@ -12,7 +12,7 @@ const Overlay = styled.div`
 `;
 
 interface IProps {
-  image: null | Blob;
+  image: Blob;
   onSave: (name: string) => void;
 }
 
@@ -24,16 +24,7 @@ export class WhoIsThis extends React.Component<
     name: "",
     image: null
   };
-  public componentWillReceiveProps(props: IProps) {
-    if (props.image) {
-      const reader = new FileReader();
-      reader.readAsDataURL(props.image);
-      reader.onloadend = () => {
-        const base64Data = reader.result;
-        this.setState({ image: base64Data });
-      };
-    }
-  }
+
   public componentDidMount() {
     const commands = {
       "my name is :name": (name: string) => {
@@ -52,7 +43,15 @@ export class WhoIsThis extends React.Component<
 
     // Start listening.
     annyang.start();
+
+    const reader = new FileReader();
+    reader.readAsDataURL(this.props.image);
+    reader.onloadend = () => {
+      const base64Data = reader.result;
+      this.setState({ image: base64Data });
+    };
   }
+  // TODO clear commands on umount
 
   public render() {
     const { image } = this.state;

@@ -48,12 +48,13 @@ export class App extends React.Component<IProps & IDispatchProps> {
             <h1>{this.props.currentlyRecognized}</h1>
           </Overlay>
         )}
-        {this.props.currentView === "who is this" && (
-          <WhoIsThis
-            onSave={this.submitFace}
-            image={this.props.latestDetectionImageWithFaces}
-          />
-        )}
+        {this.props.currentView === "who is this" &&
+          this.props.latestDetectionImageWithFaces && (
+            <WhoIsThis
+              onSave={this.submitFace}
+              image={this.props.latestDetectionImageWithFaces}
+            />
+          )}
       </Container>
     );
   }
