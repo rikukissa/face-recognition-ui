@@ -1,39 +1,44 @@
-import { Dispatch } from "react-redux";
 import { createModelForFace, recognize } from "../api";
-import { IApplicationState } from "../../store";
-import { IDetection } from "../../utils/withTracking";
-
 // TODO feels a bit nasty to refer to the event type from here
+import { IDetection } from "../../utils/withTracking";
+import { loop, Cmd } from "redux-loop";
 
-export interface IState {
-  currentlyRecognized: string[];
-  latestDetectionImageWithFaces: null | Blob;
-  currentNumberOfFaces: null | number;
-}
+const FACE_BUFFER_SIZE = 9;
 
 export type Action =
-  | IFaceDetectedAction
   | IFacesRecognisedAction
-  | IFacesAmountChangedAction
-  | IFaceSavedAction;
+  | IFaceRecognitionFailedAction
+  | IFaceReappearedAction
+  | IFaceDetectedAction
+  | IFacesDetectedAction
+  | IFaceSavedAction
+  | ISubmitFaceAction;
 
 export enum TypeKeys {
   FACE_DETECTED = "recognition/FACE_DETECTED",
+  FACES_DETECTED = "recognition/FACES_DETECTED",
   FACE_RECOGNISED = "recognition/FACE_RECOGNISED",
   FACES_AMOUNT_CHANGED = "recognition/FACES_AMOUNT_CHANGED",
   FACE_SAVED = "recognition/FACE_SAVED",
-  FACE_REAPPEARED = "recognition/FACE_REAPPEARED"
+  FACE_RECOGNITION_FAILED = "recognition/FACE_RECOGNITION_FAILED",
+  FACE_REAPPEARED = "recognition/FACE_REAPPEARED",
+  SUBMIT_FACE = "recognition/SUBMIT_FACE"
 }
 
 interface IFaceDetectedAction {
   type: TypeKeys.FACE_DETECTED;
-  payload: { image: Blob };
+  payload: { image: string };
 }
 
-function faceDetected(image: Blob): IFaceDetectedAction {
+interface IFacesDetectedAction {
+  type: TypeKeys.FACES_DETECTED;
+  payload: { detection: IDetection };
+}
+
+export function facesDetected(detection: IDetection): IFacesDetectedAction {
   return {
-    type: TypeKeys.FACE_DETECTED,
-    payload: { image }
+    type: TypeKeys.FACES_DETECTED,
+    payload: { detection }
   };
 }
 
@@ -42,24 +47,25 @@ interface IFacesRecognisedAction {
   payload: { names: string[] };
 }
 
-function facesRecognised(names: string[]): IFacesRecognisedAction {
+function facesRecognised(names: string[]): Action {
   return {
     type: TypeKeys.FACE_RECOGNISED,
     payload: { names }
   };
 }
 
-interface IFacesAmountChangedAction {
-  type: TypeKeys.FACES_AMOUNT_CHANGED;
-  payload: { amount: number };
+interface IFaceRecognitionFailedAction {
+  type: TypeKeys.FACE_RECOGNITION_FAILED;
+  payload: { error: Error };
 }
 
-function facesAmountChanged(amount: number): IFacesAmountChangedAction {
+function faceRecognitionFailed(error: Error): Action {
   return {
-    type: TypeKeys.FACES_AMOUNT_CHANGED,
-    payload: { amount }
+    type: TypeKeys.FACE_RECOGNITION_FAILED,
+    payload: { error }
   };
 }
+
 interface IFaceSavedAction {
   type: TypeKeys.FACE_SAVED;
 }
@@ -80,92 +86,127 @@ function faceReappeared(): IFaceReappearedAction {
 }
 
 /*
- * Exported actions
- */
+* Exported actions
+*/
 
-export const submitFace = (name: string) => async (
-  dispatch: Dispatch<Action>,
-  getState: () => IApplicationState
-) => {
-  const state = getState().recognition;
-  if (!state.latestDetectionImageWithFaces) {
-    return;
-  }
-  await createModelForFace(name, state.latestDetectionImageWithFaces);
-
-  dispatch(faceSaved());
-};
-
-export const recognizeFaces = (detection: IDetection) => async (
-  dispatch: Dispatch<Action>,
-  getState: () => IApplicationState
-) => {
-  const state = getState().recognition;
-
-  // Stored here to be submitted later when "Submit face" is clicked
-  if (detection.amount > 0) {
-    dispatch(faceDetected(detection.image));
-  }
-
-  // Stop if amount of faces stays the same
-  if (detection.amount === state.currentNumberOfFaces) {
-    return;
-  }
-
-  dispatch(facesAmountChanged(detection.amount));
-
-  if (detection.amount === 0) {
-    return;
-  }
-
-  const names = await recognize(detection.image);
-
-  // Recognized face still in the picture
-  if (
-    state.currentlyRecognized.length > 0 &&
-    names.indexOf(state.currentlyRecognized[0]) > -1
-  ) {
-    // Places current face to the beginning of the list
-    dispatch(
-      facesRecognised([
-        state.currentlyRecognized[0],
-        ...names.filter(name => name !== state.currentlyRecognized[0])
-      ])
-    );
-    dispatch(faceReappeared());
-    return;
-  }
-
-  dispatch(facesRecognised(names));
+interface ISubmitFaceAction {
+  type: TypeKeys.SUBMIT_FACE;
+  payload: { name: string };
+}
+export const submitFace = (name: string) => {
+  return {
+    type: TypeKeys.SUBMIT_FACE,
+    payload: { name }
+  };
 };
 
 /*
  * State
  */
+export interface IState {
+  latestDetection: null | IDetection;
+  currentlyRecognized: string[];
+  latestRecognitionCandidate: null | string;
+  currentNumberOfFaces: null | number;
+  faceBuffer: string[];
+  recognitionInProgress: boolean;
+  shouldRecognizePeople: boolean;
+}
 
 const initialState = {
-  latestDetectionImageWithFaces: null,
+  latestDetection: null,
   currentlyRecognized: [],
-  currentNumberOfFaces: null
+  latestRecognitionCandidate: null,
+  currentNumberOfFaces: null,
+  faceBuffer: [],
+  recognitionInProgress: false,
+  shouldRecognizePeople: true
 };
 
 export function reducer(state: IState = initialState, action: Action) {
+  const { latestDetection, faceBuffer } = state;
   switch (action.type) {
-    case TypeKeys.FACE_DETECTED:
-      return { ...state, latestDetectionImageWithFaces: action.payload.image };
+    case TypeKeys.FACES_DETECTED: {
+      if (state.recognitionInProgress) {
+        return state;
+      }
 
-    case TypeKeys.FACE_RECOGNISED:
-      return { ...state, currentlyRecognized: action.payload.names };
+      const amountChanged =
+        !latestDetection ||
+        latestDetection.amount !== action.payload.detection.amount;
 
-    case TypeKeys.FACES_AMOUNT_CHANGED:
-      return { ...state, currentNumberOfFaces: action.payload.amount };
+      const newBuffer =
+        !amountChanged && action.payload.detection.amount === 1
+          ? faceBuffer
+              .concat(action.payload.detection.image)
+              .slice(-FACE_BUFFER_SIZE)
+          : [];
 
-    case TypeKeys.FACE_SAVED:
-      return { ...state, currentNumberOfFaces: null };
+      const newState = {
+        ...state,
+        // Start recognizing people again when amount changes
+        shouldRecognizePeople: state.shouldRecognizePeople
+          ? state.shouldRecognizePeople
+          : amountChanged,
+        latestDetection: action.payload.detection,
+        faceBuffer: newBuffer
+      };
+
+      if (!newState.shouldRecognizePeople) {
+        return newState;
+      }
+
+      if (newBuffer.length === FACE_BUFFER_SIZE) {
+        // TODO pick the best image from the buffer
+        const frame = action.payload.detection.image;
+        return loop(
+          {
+            ...newState,
+            recognitionInProgress: true,
+            faceBuffer: [],
+            latestRecognitionCandidate: frame
+          },
+          Cmd.run(recognize, {
+            args: [frame],
+            successActionCreator: facesRecognised,
+            failActionCreator: faceRecognitionFailed
+          })
+        );
+      }
+
+      return newState;
+    }
+
+    case TypeKeys.FACE_RECOGNISED: {
+      const existingFaces = action.payload.names.filter(
+        name => state.currentlyRecognized.indexOf(name) > -1
+      );
+
+      const newState = {
+        ...state,
+        currentlyRecognized: action.payload.names,
+        shouldRecognizePeople: false,
+        recognitionInProgress: false
+      };
+
+      if (existingFaces.length > 0) {
+        return loop(newState, Cmd.action(faceReappeared()));
+      }
+      return newState;
+    }
+    case TypeKeys.FACE_RECOGNITION_FAILED:
+      return { ...state, recognitionInProgress: false };
+
+    case TypeKeys.SUBMIT_FACE:
+      return loop(
+        state,
+        Cmd.run(createModelForFace, {
+          args: [action.payload.name, state.latestRecognitionCandidate],
+          successActionCreator: faceSaved
+        })
+      );
 
     default:
-      break;
+      return state;
   }
-
-  return state;
 }

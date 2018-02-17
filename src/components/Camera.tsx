@@ -20,10 +20,26 @@ $video.setAttribute(
   left: -${VIDEO_WIDTH}px;
 `
 );
+$video.addEventListener(
+  "loadedmetadata",
+  function(e) {
+    $video.setAttribute("width", this.videoWidth.toString());
+    $video.setAttribute("height", this.videoHeight.toString());
+    $video.setAttribute(
+      "style",
+      `
+    position:fixed;
+    top: -${this.videoHeight}px;
+    left: -${this.videoWidth}px;
+  `
+    );
+  },
+  false
+);
 
 if (DEBUG) {
-  $video.src = "./sample.mp4";
-  $video.setAttribute("loop", "true");
+  $video.src = "./seinfeld.webm";
+  $video.setAttribute("loop", "false");
 } else {
   getStream().then(stream => {
     $video.src = window.URL.createObjectURL(stream);
@@ -41,9 +57,17 @@ export class Camera extends React.Component<IProps, {}> {
 
   public async componentDidMount() {
     this.mounted = true;
+    $video.addEventListener(
+      "loadedmetadata",
+      e => {
+        this.$canvas.setAttribute("width", $video.videoWidth.toString());
+        this.$canvas.setAttribute("height", $video.videoHeight.toString());
+      },
+      false
+    );
 
-    this.$canvas.setAttribute("width", VIDEO_WIDTH.toString());
-    this.$canvas.setAttribute("height", VIDEO_HEIGHT.toString());
+    this.$canvas.setAttribute("width", $video.videoWidth.toString());
+    this.$canvas.setAttribute("height", $video.videoHeight.toString());
 
     if (this.props.innerRef) {
       this.props.innerRef($video);
@@ -57,7 +81,7 @@ export class Camera extends React.Component<IProps, {}> {
   /*
    * The reason I'm not just stretching the video is, that it would make
    * the face detection much slower
-   * More pixels = more surfice to look for the face
+   * More pixels = more surface to look for the face
    */
   private reflectVideoToCanvas = () => {
     if (!this.mounted) {
@@ -71,9 +95,7 @@ export class Camera extends React.Component<IProps, {}> {
   public render() {
     return (
       <canvas
-        width={VIDEO_WIDTH}
         className={this.props.className}
-        height={VIDEO_HEIGHT}
         ref={($el: HTMLCanvasElement) => {
           this.$canvas = $el;
         }}

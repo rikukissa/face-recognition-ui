@@ -14,20 +14,17 @@ export interface IFaceRect {
 
 export interface IDetection {
   amount: number;
-  image: Blob;
+  image: string;
+  data: IFaceRect[];
 }
 
-function createFaceImage($video: HTMLVideoElement): Promise<Blob> {
+function createFaceImage($video: HTMLVideoElement): string {
   const $canvas = document.createElement("canvas");
   $canvas.width = $video.width;
   $canvas.height = $video.height;
   const context = $canvas.getContext("2d") as CanvasRenderingContext2D;
   context.drawImage($video, 0, 0, $canvas.width, $canvas.height);
-  return new Promise((resolve, reject) =>
-    $canvas.toBlob(
-      blob => (blob ? resolve(blob) : reject(new Error("No image")))
-    )
-  );
+  return $canvas.toDataURL();
 }
 
 interface IDetectionEvent {
@@ -90,7 +87,8 @@ export function withTracking(WrappedComponent: React.ComponentClass<IProps>) {
 
         this.props.onFacesDetected({
           amount: event.data.length,
-          image: await createFaceImage(this.$video)
+          image: createFaceImage(this.$video),
+          data: event.data
         });
       });
     }

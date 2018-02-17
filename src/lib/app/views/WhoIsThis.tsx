@@ -12,18 +12,14 @@ const Overlay = styled.div`
 `;
 
 interface IProps {
-  image: Blob;
+  image: string;
   onSave: (name: string) => void;
 }
 
-export class WhoIsThis extends React.Component<
-  IProps,
-  { name: string; image: null | string }
-> {
+export class WhoIsThis extends React.Component<IProps, { name: string }> {
   private commands: { [key: string]: (param: string) => void } = {};
   public state = {
-    name: "",
-    image: null
+    name: ""
   };
 
   public componentDidMount() {
@@ -48,20 +44,13 @@ export class WhoIsThis extends React.Component<
 
     // Start listening.
     annyang.start();
-
-    const reader = new FileReader();
-    reader.readAsDataURL(this.props.image);
-    reader.onloadend = () => {
-      const base64Data = reader.result;
-      this.setState({ image: base64Data });
-    };
   }
   public componentWillUnmount() {
     annyang.removeCommands(Object.keys(this.commands));
   }
 
   public render() {
-    const { image } = this.state;
+    const { image } = this.props;
     return (
       <Overlay>
         <h1>Who is this?</h1>

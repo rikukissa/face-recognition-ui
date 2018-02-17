@@ -1,5 +1,7 @@
-import { createStore, combineReducers, applyMiddleware } from "redux";
-import thunk from "redux-thunk";
+import { createStore, applyMiddleware, compose } from "redux";
+import { combineReducers, install, StoreCreator } from "redux-loop";
+
+const enhancedCreateStore = createStore as StoreCreator;
 
 // Features
 import {
@@ -18,10 +20,16 @@ export interface IApplicationState {
   recognition: IRecognitionState;
 }
 
-export const store = createStore(
-  combineReducers({
-    app,
-    recognition
-  }),
-  applyMiddleware(thunk, appMiddleware)
-);
+const enhancer = compose(install(), applyMiddleware(appMiddleware));
+
+export const storeCreator = () =>
+  enhancedCreateStore(
+    combineReducers({
+      app,
+      recognition
+    }),
+    undefined,
+    enhancer
+  );
+
+export { storeCreator as createStore };

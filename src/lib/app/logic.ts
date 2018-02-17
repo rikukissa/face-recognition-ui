@@ -58,24 +58,31 @@ export const middleware: IAppMiddleware<IApplicationState> = <
 >(
   api: MiddlewareAPI<S>
 ) => (next: Dispatch<S>) => {
-  let timeout: number;
+  let timeout: null | number = null;
 
   return (action: any) => {
     const currentView = api.getState().app.currentView;
 
-    if (RecognitionActionTypes.FACE_REAPPEARED && timeout) {
+    const shouldReset =
+      action.type === RecognitionActionTypes.FACE_REAPPEARED ||
+      (action.type === RecognitionActionTypes.FACE_RECOGNISED &&
+        action.payload.names.length > 0);
+
+    const shouldSetTimer =
+      action.type === RecognitionActionTypes.FACES_DETECTED &&
+      action.payload.detection.amount === 0 &&
+      currentView === "dashboard";
+
+    if (shouldReset && timeout !== null) {
       window.clearTimeout(timeout);
+      timeout = null;
     }
 
-    if (
-      action.type === RecognitionActionTypes.FACES_AMOUNT_CHANGED &&
-      action.payload.amount === 0 &&
-      currentView === "dashboard"
-    ) {
-      if (timeout) {
-        window.clearTimeout(timeout);
-      }
-      timeout = window.setTimeout(() => api.dispatch(navigateToHome()), 5000);
+    if (shouldSetTimer && !timeout) {
+      timeout = window.setTimeout(() => {
+        api.dispatch(navigateToHome());
+        timeout = null;
+      }, 5000);
     }
     return next(action);
   };
