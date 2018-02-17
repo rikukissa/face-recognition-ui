@@ -1,8 +1,10 @@
-import { Middleware } from "redux";
+import { Middleware, MiddlewareAPI, Dispatch } from "redux";
 import {
   TypeKeys as RecognitionActionTypes,
   Action as RecognitionAction
 } from "../recognition/logic";
+import { IApplicationState } from "../../store";
+
 export interface IState {
   currentView: "home" | "dashboard" | "who is this";
 }
@@ -31,6 +33,9 @@ export function reducer(
       return { ...state, currentView: "home" };
 
     case TypeKeys.NAVIGATE_TO_HOME:
+      if (state.currentView === "who is this") {
+        return state;
+      }
       return { ...state, currentView: "home" };
   }
   return state;
@@ -45,16 +50,27 @@ function navigateToHome(): INavigateToHomeAction {
     type: TypeKeys.NAVIGATE_TO_HOME
   };
 }
-
-export const middleware: Middleware = api => next => {
+export interface IAppMiddleware<K> extends Middleware {
+  <S extends K>(api: MiddlewareAPI<S>): (next: Dispatch<S>) => Dispatch<S>;
+}
+export const middleware: IAppMiddleware<IApplicationState> = <
+  S extends IApplicationState
+>(
+  api: MiddlewareAPI<S>
+) => (next: Dispatch<S>) => {
   let timeout: number;
 
   return (action: any) => {
-    // TODO clear timeout if face disappeared for a second, but came back
-    // and AWS recognised it again
+    const currentView = api.getState().app.currentView;
+
+    if (RecognitionActionTypes.FACE_REAPPEARED && timeout) {
+      window.clearTimeout(timeout);
+    }
+
     if (
       action.type === RecognitionActionTypes.FACES_AMOUNT_CHANGED &&
-      action.payload.amount === 0
+      action.payload.amount === 0 &&
+      currentView === "dashboard"
     ) {
       if (timeout) {
         window.clearTimeout(timeout);

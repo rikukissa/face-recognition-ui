@@ -21,7 +21,8 @@ export enum TypeKeys {
   FACE_DETECTED = "recognition/FACE_DETECTED",
   FACE_RECOGNISED = "recognition/FACE_RECOGNISED",
   FACES_AMOUNT_CHANGED = "recognition/FACES_AMOUNT_CHANGED",
-  FACE_SAVED = "recognition/FACE_SAVED"
+  FACE_SAVED = "recognition/FACE_SAVED",
+  FACE_REAPPEARED = "recognition/FACE_REAPPEARED"
 }
 
 interface IFaceDetectedAction {
@@ -66,6 +67,15 @@ interface IFaceSavedAction {
 function faceSaved(): IFaceSavedAction {
   return {
     type: TypeKeys.FACE_SAVED
+  };
+}
+interface IFaceReappearedAction {
+  type: TypeKeys.FACE_REAPPEARED;
+}
+
+function faceReappeared(): IFaceReappearedAction {
+  return {
+    type: TypeKeys.FACE_REAPPEARED
   };
 }
 
@@ -122,6 +132,7 @@ export const recognizeFaces = (detection: IDetection) => async (
         ...names.filter(name => name !== state.currentlyRecognized[0])
       ])
     );
+    dispatch(faceReappeared());
     return;
   }
 

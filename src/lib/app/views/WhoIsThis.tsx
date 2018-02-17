@@ -20,13 +20,14 @@ export class WhoIsThis extends React.Component<
   IProps,
   { name: string; image: null | string }
 > {
+  private commands: { [key: string]: (param: string) => void } = {};
   public state = {
     name: "",
     image: null
   };
 
   public componentDidMount() {
-    const commands = {
+    this.commands = {
       "my name is :name": (name: string) => {
         this.setState({ name });
       },
@@ -43,7 +44,7 @@ export class WhoIsThis extends React.Component<
     };
 
     // Add our commands to annyang
-    annyang.addCommands(commands);
+    annyang.addCommands(this.commands);
 
     // Start listening.
     annyang.start();
@@ -55,7 +56,9 @@ export class WhoIsThis extends React.Component<
       this.setState({ image: base64Data });
     };
   }
-  // TODO clear commands on umount
+  public componentWillUnmount() {
+    annyang.removeCommands(Object.keys(this.commands));
+  }
 
   public render() {
     const { image } = this.state;
