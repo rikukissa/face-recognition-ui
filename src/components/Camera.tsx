@@ -82,6 +82,7 @@ export class Camera extends React.Component<
   private $video: HTMLVideoElement;
   private $canvas: HTMLCanvasElement;
   private tracker: any;
+  private tracking: any;
   private mounted: boolean;
 
   public async componentDidMount() {
@@ -110,7 +111,7 @@ export class Camera extends React.Component<
 
     this.tracker.setInitialScale(4);
     this.tracker.setEdgesDensity(0.1);
-    tracking.track(this.$video, this.tracker, { camera: true });
+    this.tracking = tracking.track(this.$video, this.tracker, { camera: true });
 
     const shouldEmit = createThrottler();
 
@@ -133,6 +134,7 @@ export class Camera extends React.Component<
   }
   public componentWillUnmount() {
     this.mounted = false;
+    this.tracking.stop();
     this.tracker.removeAllListeners("track");
   }
   /*
