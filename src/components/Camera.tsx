@@ -5,7 +5,7 @@ import "tracking/build/data/face";
 import { getStream } from "../utils/camera";
 
 declare const tracking: any;
-
+const DEBUG = true;
 const Container = styled.div`
   width: 100%;
   height: 100%;
@@ -99,7 +99,12 @@ export class Camera extends React.Component<
     this.$video.setAttribute("height", "240");
     this.$video.setAttribute("autoplay", "true");
 
-    this.$video.src = window.URL.createObjectURL(stream);
+    if (DEBUG) {
+      this.$video.src = "./sample.mp4";
+      this.$video.setAttribute("loop", "true");
+    } else {
+      this.$video.src = window.URL.createObjectURL(stream);
+    }
 
     this.$canvas.setAttribute("width", "320");
     this.$canvas.setAttribute("height", "240");
@@ -111,7 +116,9 @@ export class Camera extends React.Component<
 
     this.tracker.setInitialScale(4);
     this.tracker.setEdgesDensity(0.1);
-    this.tracking = tracking.track(this.$video, this.tracker, { camera: true });
+    this.tracking = tracking.track(this.$video, this.tracker, {
+      camera: !DEBUG
+    });
 
     const shouldEmit = createThrottler();
 
