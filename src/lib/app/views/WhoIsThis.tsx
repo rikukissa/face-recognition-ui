@@ -35,6 +35,10 @@ export class WhoIsThis extends React.Component<
       },
       save: () => {
         this.props.onSave(this.state.name);
+      },
+      // Debug route
+      hello: () => {
+        alert("hello");
       }
     };
 
