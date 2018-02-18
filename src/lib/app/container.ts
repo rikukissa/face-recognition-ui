@@ -14,7 +14,8 @@ function mapStateToProps(state: IApplicationState) {
     latestRecognitionCandidate: state.recognition.latestRecognitionCandidate,
     latestDetection: state.recognition.latestDetection,
     faceBuffer: state.recognition.faceBuffer,
-    trackingStoppedForDebugging: state.recognition.trackingStoppedForDebugging
+    trackingStoppedForDebugging: state.recognition.trackingStoppedForDebugging,
+    firstFaceDetected: state.recognition.firstFaceDetected
   };
 }
 

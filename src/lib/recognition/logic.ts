@@ -1,6 +1,6 @@
 import { createModelForFace, recognize } from "../api";
 // TODO feels a bit nasty to refer to the event type from here
-import { IDetection } from "../../utils/withTracking";
+import { IDetection, IFaceRect } from "../../utils/withTracking";
 import { loop, Cmd } from "redux-loop";
 
 const FACE_BUFFER_SIZE = 9;
@@ -123,6 +123,7 @@ export interface IState {
   recognitionInProgress: boolean;
   shouldRecognizePeople: boolean;
   trackingStoppedForDebugging: boolean;
+  firstFaceDetected: null | IFaceRect;
 }
 
 const initialState = {
@@ -133,8 +134,40 @@ const initialState = {
   faceBuffer: [],
   recognitionInProgress: false,
   shouldRecognizePeople: true,
-  trackingStoppedForDebugging: false
+  trackingStoppedForDebugging: false,
+  firstFaceDetected: null
 };
+
+function simpleDist(pointA: IFaceRect, pointB: IFaceRect) {
+  const x = pointA.x - pointB.x;
+  const y = pointA.y - pointB.y;
+
+  return Math.sqrt(x * x + y * y);
+}
+
+function originalFaceStillInPicture(
+  firstFaceDetected: null | IFaceRect,
+  latestDetection: null | IDetection,
+  detection: IDetection
+) {
+  if (!firstFaceDetected || !latestDetection || detection.amount === 0) {
+    return false;
+  }
+
+  const sortedFaces = detection.data
+    .slice(0)
+    .sort(
+      (a, b) =>
+        simpleDist(a, firstFaceDetected) - simpleDist(b, firstFaceDetected)
+    );
+  const closest = sortedFaces[0];
+
+  const likelyTheSame =
+    Math.abs(firstFaceDetected.x - closest.x) < firstFaceDetected.width &&
+    Math.abs(firstFaceDetected.y - closest.y) < firstFaceDetected.height;
+
+  return likelyTheSame ? closest : false;
+}
 
 export function reducer(state: IState = initialState, action: Action) {
   const { latestDetection, faceBuffer } = state;
@@ -143,17 +176,31 @@ export function reducer(state: IState = initialState, action: Action) {
       if (state.recognitionInProgress) {
         return state;
       }
+      const { detection } = action.payload;
 
+      const firstFaceInPicture = originalFaceStillInPicture(
+        state.firstFaceDetected,
+        latestDetection,
+        detection
+      );
       const amountChanged =
-        !latestDetection ||
-        latestDetection.amount !== action.payload.detection.amount;
+        !latestDetection || latestDetection.amount !== detection.amount;
 
       const newBuffer =
-        !amountChanged && action.payload.detection.amount === 1
-          ? faceBuffer
-              .concat(action.payload.detection.image)
-              .slice(-FACE_BUFFER_SIZE)
+        (!amountChanged && detection.amount === 1) || firstFaceInPicture
+          ? faceBuffer.concat(detection.image).slice(-FACE_BUFFER_SIZE)
           : [];
+
+      let newFirstFaceInPicture = null;
+
+      if (firstFaceInPicture) {
+        newFirstFaceInPicture = firstFaceInPicture;
+      } else if (
+        (!latestDetection || latestDetection.amount === 0) &&
+        detection.amount === 1
+      ) {
+        newFirstFaceInPicture = detection.data[0];
+      }
 
       const newState = {
         ...state,
@@ -161,8 +208,9 @@ export function reducer(state: IState = initialState, action: Action) {
         shouldRecognizePeople: state.shouldRecognizePeople
           ? state.shouldRecognizePeople
           : amountChanged,
-        latestDetection: action.payload.detection,
-        faceBuffer: newBuffer
+        latestDetection: detection,
+        faceBuffer: newBuffer,
+        firstFaceDetected: newFirstFaceInPicture
       };
 
       if (!newState.shouldRecognizePeople) {
@@ -171,7 +219,7 @@ export function reducer(state: IState = initialState, action: Action) {
 
       if (newBuffer.length === FACE_BUFFER_SIZE) {
         // TODO pick the best image from the buffer
-        const frame = action.payload.detection.image;
+        const frame = detection.image;
         return loop(
           {
             ...newState,

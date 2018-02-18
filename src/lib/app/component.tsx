@@ -52,6 +52,7 @@ const DebugSquare = styled.div.attrs<{
   height: number;
   x: number;
   y: number;
+  firstDetected: boolean;
 }>({
   style: ({
     width,
@@ -71,7 +72,7 @@ const DebugSquare = styled.div.attrs<{
   })
 })`
   position: absolute;
-  border: 1px solid #fff;
+  border: 1px solid ${({ firstDetected }) => (firstDetected ? "red" : "#fff")};
 `;
 
 export interface IProps {
@@ -81,6 +82,7 @@ export interface IProps {
   latestDetection: IRecognitionState["latestDetection"];
   faceBuffer: IRecognitionState["faceBuffer"];
   trackingStoppedForDebugging: IRecognitionState["trackingStoppedForDebugging"];
+  firstFaceDetected: IRecognitionState["firstFaceDetected"];
 }
 
 export interface IDispatchProps {
@@ -129,7 +131,11 @@ export class App extends React.Component<IProps & IDispatchProps> {
               <DebugCamera>
                 <img src={this.props.latestDetection.image} />
                 {this.props.latestDetection.data.map((rect, i) => (
-                  <DebugSquare {...rect} key={i} />
+                  <DebugSquare
+                    {...rect}
+                    firstDetected={rect === this.props.firstFaceDetected}
+                    key={i}
+                  />
                 ))}
                 <DebugFooter>
                   {this.props.latestDetection.amount} faces

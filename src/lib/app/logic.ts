@@ -29,7 +29,7 @@ export function reducer(
         return { ...state, currentView: "who is this" };
       }
       return { ...state, currentView: "dashboard" };
-    case RecognitionActionTypes.FACE_SAVED:
+    case RecognitionActionTypes.SUBMIT_FACE:
       return { ...state, currentView: "home" };
 
     case TypeKeys.NAVIGATE_TO_HOME:

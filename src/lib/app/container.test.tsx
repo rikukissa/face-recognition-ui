@@ -19,7 +19,7 @@ jest.mock("../../components/Camera", () => "div");
 jest.mock("../../utils/withTracking", () => ({ withTracking: () => "div" }));
 jest.mock("../../utils/camera", () => () => "div");
 jest.mock("../api", () => ({
-  recognize: jest.fn().mockReturnValue(Promise.resolve(["riku"])),
+  recognize: jest.fn(),
   createModelForFace: () => Promise.resolve()
 }));
 jest.mock("annyang", () => ({
@@ -43,11 +43,16 @@ function createTestApp(element: JSX.Element) {
 describe("App", () => {
   let store: Store<IApplicationState>;
   let view: ReactWrapper<any, any>;
+  beforeEach(async () => {
+    const testApp = createTestApp(<App />);
+    store = testApp.store;
+    view = testApp.view;
+    (recognize as jest.Mock<Promise<string[]>>).mockReturnValue(
+      Promise.resolve(["riku"])
+    );
+  });
   describe("when face is recognized", () => {
     beforeEach(async () => {
-      const testApp = createTestApp(<App />);
-      store = testApp.store;
-      view = testApp.view;
       for (let i = 0; i < 10; i++) {
         await store.dispatch(
           facesDetected({
@@ -112,6 +117,51 @@ describe("App", () => {
           expect(view.text().indexOf("foobar")).toBeGreaterThan(-1);
         });
       });
+    });
+  });
+  describe("when multiple faces get recognized", () => {
+    it("still tries to keep track of the first recognized face", async () => {
+      const a = { width: 100, height: 100, x: 50, y: 50 };
+      const b = { width: 100, height: 100, x: 0, y: 0 };
+      const c = { width: 40, height: 40, x: 60, y: 60 };
+
+      await store.dispatch(
+        facesDetected({
+          image: TEST_IMAGE,
+          amount: 1,
+          data: [a]
+        })
+      );
+
+      await store.dispatch(
+        facesDetected({
+          image: TEST_IMAGE,
+          amount: 2,
+          data: [a, b]
+        })
+      );
+
+      for (let i = 0; i < 4; i++) {
+        await store.dispatch(
+          facesDetected({
+            image: TEST_IMAGE,
+            amount: 2,
+            data: [{ ...a, x: a.x - i }, { ...b, x: b.x - i }]
+          })
+        );
+      }
+      for (let i = 0; i < 4; i++) {
+        await store.dispatch(
+          facesDetected({
+            image: TEST_IMAGE,
+            amount: 3,
+            data: [{ ...a, x: a.x - i }, { ...b, x: b.x - i }, c]
+          })
+        );
+      }
+      expect(store.getState().recognition.currentlyRecognized).toEqual([
+        "riku"
+      ]);
     });
   });
 });
