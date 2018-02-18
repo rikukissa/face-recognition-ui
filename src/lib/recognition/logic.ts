@@ -2,6 +2,7 @@ import { createModelForFace, recognize } from "../api";
 // TODO feels a bit nasty to refer to the event type from here
 import { IDetection, IFaceRect } from "../../utils/withTracking";
 import { loop, Cmd } from "redux-loop";
+import { crop } from "../../utils/image";
 
 const FACE_BUFFER_SIZE = 9;
 
@@ -13,6 +14,7 @@ export type Action =
   | IFacesDetectedAction
   | IFaceSavedAction
   | IToggleTrackingAction
+  | IImageToBeBufferedAction
   | ISubmitFaceAction;
 
 export enum TypeKeys {
@@ -24,7 +26,8 @@ export enum TypeKeys {
   FACE_RECOGNITION_FAILED = "recognition/FACE_RECOGNITION_FAILED",
   FACE_REAPPEARED = "recognition/FACE_REAPPEARED",
   SUBMIT_FACE = "recognition/SUBMIT_FACE",
-  DEBUG_TOGGLE_TRACKING = "recognition/DEBUG_TOGGLE_TRACKING"
+  DEBUG_TOGGLE_TRACKING = "recognition/DEBUG_TOGGLE_TRACKING",
+  IMAGE_RECEIVED_FOR_BUFFERING = "recognition/IMAGE_RECEIVED_FOR_BUFFERING"
 }
 
 interface IFaceDetectedAction {
@@ -84,6 +87,17 @@ interface IFaceReappearedAction {
 function faceReappeared(): IFaceReappearedAction {
   return {
     type: TypeKeys.FACE_REAPPEARED
+  };
+}
+interface IImageToBeBufferedAction {
+  type: TypeKeys.IMAGE_RECEIVED_FOR_BUFFERING;
+  payload: { image: string };
+}
+
+function bufferImage(image: string): IImageToBeBufferedAction {
+  return {
+    type: TypeKeys.IMAGE_RECEIVED_FOR_BUFFERING,
+    payload: { image }
   };
 }
 
@@ -172,6 +186,35 @@ function originalFaceStillInPicture(
 export function reducer(state: IState = initialState, action: Action) {
   const { latestDetection, faceBuffer } = state;
   switch (action.type) {
+    case TypeKeys.IMAGE_RECEIVED_FOR_BUFFERING: {
+      const { image } = action.payload;
+
+      const newBuffer = faceBuffer.concat(image).slice(-FACE_BUFFER_SIZE);
+      const newState = { ...state, faceBuffer: newBuffer };
+      if (!newState.shouldRecognizePeople) {
+        return newState;
+      }
+
+      if (newBuffer.length === FACE_BUFFER_SIZE) {
+        // TODO pick the best image from the buffer
+        const frame = image;
+
+        return loop(
+          {
+            ...newState,
+            recognitionInProgress: true,
+            faceBuffer: [],
+            latestRecognitionCandidate: frame
+          },
+          Cmd.run(recognize, {
+            args: [frame],
+            successActionCreator: facesRecognised,
+            failActionCreator: faceRecognitionFailed
+          })
+        );
+      }
+      return newState;
+    }
     case TypeKeys.FACES_DETECTED: {
       if (state.recognitionInProgress) {
         return state;
@@ -186,10 +229,8 @@ export function reducer(state: IState = initialState, action: Action) {
       const amountChanged =
         !latestDetection || latestDetection.amount !== detection.amount;
 
-      const newBuffer =
-        (!amountChanged && detection.amount === 1) || firstFaceInPicture
-          ? faceBuffer.concat(detection.image).slice(-FACE_BUFFER_SIZE)
-          : [];
+      const shouldKeepBuffer =
+        (!amountChanged && detection.amount === 1) || firstFaceInPicture;
 
       let newFirstFaceInPicture = null;
 
@@ -209,32 +250,18 @@ export function reducer(state: IState = initialState, action: Action) {
           ? state.shouldRecognizePeople
           : amountChanged,
         latestDetection: detection,
-        faceBuffer: newBuffer,
-        firstFaceDetected: newFirstFaceInPicture
+        firstFaceDetected: newFirstFaceInPicture,
+        faceBuffer: !shouldKeepBuffer ? [] : state.faceBuffer
       };
-
-      if (!newState.shouldRecognizePeople) {
-        return newState;
-      }
-
-      if (newBuffer.length === FACE_BUFFER_SIZE) {
-        // TODO pick the best image from the buffer
-        const frame = detection.image;
+      if (newFirstFaceInPicture) {
         return loop(
-          {
-            ...newState,
-            recognitionInProgress: true,
-            faceBuffer: [],
-            latestRecognitionCandidate: frame
-          },
-          Cmd.run(recognize, {
-            args: [frame],
-            successActionCreator: facesRecognised,
-            failActionCreator: faceRecognitionFailed
+          newState,
+          Cmd.run(crop, {
+            args: [detection.image, newFirstFaceInPicture],
+            successActionCreator: bufferImage
           })
         );
       }
-
       return newState;
     }
 
