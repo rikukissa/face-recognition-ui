@@ -38,11 +38,11 @@ $video.addEventListener(
 );
 
 if (DEBUG) {
-  $video.src = "./sample.mp4";
+  $video.src = "./sample2.mp4";
   $video.setAttribute("loop", "false");
 } else {
   getStream().then(stream => {
-    $video.src = window.URL.createObjectURL(stream);
+    $video.srcObject = stream;
   });
 }
 

@@ -58,35 +58,126 @@ interface ITrackingProps {
   onFacesDetected: (data: IDetection) => void;
 }
 
+function trackingJSTracker(
+  $source: HTMLVideoElement,
+  onDetect: (event: IDetection) => void
+) {
+  const tracker: any = new tracking.ObjectTracker("face") as any;
+  console.log("using tracking.js");
+
+  // Smaller is more precise but slower
+  tracker.setStepSize(0.5);
+
+  tracker.setInitialScale(4);
+  tracker.setEdgesDensity(0.1);
+
+  const wrapper = tracking.track($source, tracker, {
+    camera: false
+  });
+
+  const shouldEmit = createThrottler();
+
+  tracker.on("track", async (event: IDetectionEvent) => {
+    /*
+   * Tracking sometimes gives random empty results
+   * even when there are faces in the picture
+   */
+    if (!shouldEmit(event)) {
+      return;
+    }
+
+    onDetect({
+      amount: event.data.length,
+      image: createFaceImage($source),
+      data: event.data
+    });
+  });
+
+  return {
+    ...tracker,
+    stop: () => {
+      wrapper.stop();
+      tracker.removeAllListeners("track");
+    }
+  };
+}
+
+interface IChromeDetectionItem {
+  boundingBox: {
+    x: number;
+    y: number;
+    top: number;
+    left: number;
+    right: number;
+    bottom: number;
+    width: number;
+    height: number;
+  };
+  landmarks: Array<{
+    location: { x: number; y: number };
+    type: string;
+  }>;
+}
+
+function chromeExperimentalTracker(
+  $source: HTMLVideoElement,
+  onDetect: (event: IDetection) => void
+) {
+  console.log("using chrome");
+
+  const faceDetector = new (window as any).FaceDetector({
+    maxDetectedFaces: 10,
+    fastMode: true
+  });
+
+  let stopped = false;
+
+  async function loop() {
+    if (stopped) {
+      return;
+    }
+    try {
+      const result = await faceDetector.detect($source);
+      onDetect({
+        amount: result.lenght,
+        image: createFaceImage($source),
+        data: result.map((item: IChromeDetectionItem) => ({
+          width: item.boundingBox.width,
+          height: item.boundingBox.height,
+          y: item.boundingBox.y,
+          x: item.boundingBox.x
+        }))
+      });
+      // tslint:disable
+    } catch (err) {}
+    window.requestAnimationFrame(loop);
+  }
+  loop();
+
+  return {
+    stop: () => {
+      stopped = true;
+    }
+  };
+}
+
 export function withTracking(WrappedComponent: React.ComponentClass<IProps>) {
   return class ComponentWithTracking extends React.Component<
     ITrackingProps,
     {}
   > {
     private tracker: any;
-    private tracking: any;
     private $video: HTMLVideoElement;
 
     public async componentDidMount() {
-      this.tracker = new tracking.ObjectTracker("face") as any;
-
-      // Smaller is more precise but slower
-      this.tracker.setStepSize(0.5);
-
-      this.tracker.setInitialScale(4);
-      this.tracker.setEdgesDensity(0.1);
-      this.tracking = tracking.track(this.$video, this.tracker, {
-        camera: false
-      });
-
-      const shouldEmit = createThrottler();
-
-      this.tracker.on("track", async (event: IDetectionEvent) => {
+      this.tracker = ((window as any).FaceDetector
+        ? chromeExperimentalTracker
+        : trackingJSTracker)(this.$video, (event: IDetectionEvent) => {
         /*
        * Tracking sometimes gives random empty results
        * even when there are faces in the picture
        */
-        if (!shouldEmit(event) || this.props.trackingStoppedForDebugging) {
+        if (this.props.trackingStoppedForDebugging) {
           return;
         }
 
@@ -98,8 +189,7 @@ export function withTracking(WrappedComponent: React.ComponentClass<IProps>) {
       });
     }
     public componentWillUnmount() {
-      this.tracking.stop();
-      this.tracker.removeAllListeners("track");
+      this.tracker.stop();
     }
 
     public render() {

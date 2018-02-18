@@ -52,12 +52,25 @@ const DebugSquare = styled.div.attrs<{
   height: number;
   x: number;
   y: number;
-}>({})`
+}>({
+  style: ({
+    width,
+    height,
+    x,
+    y
+  }: {
+    width: number;
+    height: number;
+    x: number;
+    y: number;
+  }) => ({
+    width: `${width}px`,
+    height: `${height}px`,
+    left: `${x}px`,
+    top: `${y}px`
+  })
+})`
   position: absolute;
-  width: ${({ width }) => width}px;
-  height: ${({ height }) => height}px;
-  left: ${({ x }) => x}px;
-  top: ${({ y }) => y}px;
   border: 1px solid #fff;
 `;
 

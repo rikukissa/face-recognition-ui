@@ -1,9 +1,4 @@
 export function getStream() {
-  return new Promise((resolve, reject) => {
-    navigator.getUserMedia(
-      { video: true, audio: false },
-      stream => resolve(stream),
-      err => reject(err)
-    );
-  });
+  const constraints = { video: { facingMode: "environment" } };
+  return navigator.mediaDevices.getUserMedia(constraints);
 }
