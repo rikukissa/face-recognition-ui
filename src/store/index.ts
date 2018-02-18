@@ -12,7 +12,7 @@ import {
 import {
   reducer as app,
   IState as IAppState,
-  middleware as appMiddleware
+  timerMiddleware
 } from "../lib/app/logic";
 
 export interface IApplicationState {
@@ -20,7 +20,7 @@ export interface IApplicationState {
   recognition: IRecognitionState;
 }
 
-const enhancer = compose(install(), applyMiddleware(appMiddleware));
+const enhancer = compose(install(), applyMiddleware(timerMiddleware));
 
 export const storeCreator = () =>
   enhancedCreateStore(
