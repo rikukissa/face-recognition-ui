@@ -6,7 +6,6 @@ import { IState as IRecognitionState } from "../recognition/logic";
 import { WhoIsThis } from "./views/WhoIsThis";
 import { IDetection, withTracking } from "../../utils/withTracking";
 import { DEBUG } from "../../utils/config";
-// import { DEBUG } from "../../utils/config";
 
 const Container = styled.div`
   position: relative;
@@ -91,9 +90,7 @@ export interface IDispatchProps {
   toggleTracking: () => void;
 }
 
-const TrackingCamera = styled(withTracking(Camera))`
-  width: 100%;
-`;
+const TrackingCamera = withTracking(Camera);
 
 export class App extends React.Component<IProps & IDispatchProps> {
   private submitFace = (name: string) => {
@@ -103,18 +100,26 @@ export class App extends React.Component<IProps & IDispatchProps> {
   public render() {
     return (
       <Container>
-        {(this.props.currentView === "home" ||
-          // We want to keep on tracking while the dashboard is open
-          // to detect no faces in the image
-          this.props.currentView === "dashboard") && (
-          <TrackingCamera
-            onFacesDetected={this.props.facesDetected}
-            trackingStoppedForDebugging={this.props.trackingStoppedForDebugging}
-          />
+        {this.props.currentView === "home" && (
+          <div>
+            <h1>index</h1>
+            <TrackingCamera
+              onFacesDetected={this.props.facesDetected}
+              trackingStoppedForDebugging={
+                this.props.trackingStoppedForDebugging
+              }
+            />
+          </div>
         )}
 
         {this.props.currentView === "dashboard" && (
           <Overlay>
+            <TrackingCamera
+              onFacesDetected={this.props.facesDetected}
+              trackingStoppedForDebugging={
+                this.props.trackingStoppedForDebugging
+              }
+            />
             <h1>{this.props.currentlyRecognized}</h1>
           </Overlay>
         )}

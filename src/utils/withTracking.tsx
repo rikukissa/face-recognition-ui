@@ -138,6 +138,10 @@ function chromeExperimentalTracker(
     }
     try {
       const result = await faceDetector.detect($source);
+      if (result.length > 0) {
+        console.log(result);
+      }
+
       onDetect({
         amount: result.lenght,
         image: createFaceImage($source),
