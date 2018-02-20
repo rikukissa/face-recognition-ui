@@ -16,9 +16,11 @@ export type Action =
   | IFaceSavedAction
   | IToggleTrackingAction
   | IImageToBeBufferedAction
+  | IResetAction
   | ISubmitFaceAction;
 
 export enum TypeKeys {
+  RESET = "recognition/RESET",
   FACE_DETECTED = "recognition/FACE_DETECTED",
   FACES_DETECTED = "recognition/FACES_DETECTED",
   FACE_RECOGNISED = "recognition/FACE_RECOGNISED",
@@ -125,6 +127,15 @@ export const submitFace = (name: string) => {
     payload: { name }
   };
 };
+interface IResetAction {
+  type: TypeKeys.RESET;
+}
+
+export const reset = () => {
+  return {
+    type: TypeKeys.RESET
+  };
+};
 
 /*
  * State
@@ -183,6 +194,9 @@ function originalFaceStillInPicture(
 export function reducer(state: IState = initialState, action: Action) {
   const { latestDetection, faceBuffer } = state;
   switch (action.type) {
+    case TypeKeys.RESET: {
+      return initialState;
+    }
     case TypeKeys.IMAGE_RECEIVED_FOR_BUFFERING: {
       const { image } = action.payload;
 
@@ -265,7 +279,9 @@ export function reducer(state: IState = initialState, action: Action) {
 
       const newState = {
         ...state,
-        currentlyRecognized: action.payload.names,
+        currentlyRecognized: state.currentlyRecognized.concat(
+          action.payload.names
+        ),
         recognitionInProgress: false
       };
 
@@ -274,6 +290,7 @@ export function reducer(state: IState = initialState, action: Action) {
       }
       return newState;
     }
+
     case TypeKeys.FACE_RECOGNITION_FAILED:
       return { ...state, faceBuffer: [], recognitionInProgress: false };
 
@@ -285,6 +302,7 @@ export function reducer(state: IState = initialState, action: Action) {
           successActionCreator: faceSaved
         })
       );
+
     case TypeKeys.FACE_SAVED:
       return {
         ...state,

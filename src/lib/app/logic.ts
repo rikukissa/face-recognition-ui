@@ -2,7 +2,8 @@ import { loop, Cmd } from "redux-loop";
 import { Middleware, MiddlewareAPI, Dispatch } from "redux";
 import {
   TypeKeys as RecognitionActionTypes,
-  Action as RecognitionAction
+  Action as RecognitionAction,
+  reset as resetRecognition
 } from "../recognition/logic";
 import { IApplicationState } from "../../store";
 
@@ -85,13 +86,19 @@ export function reducer(
       return { ...state, currentView: "dashboard" };
 
     case RecognitionActionTypes.FACE_SAVED:
-      return { ...state, currentView: "home" };
+      return loop(
+        { ...state, currentView: "home" },
+        Cmd.action(resetRecognition())
+      );
 
     case TypeKeys.NAVIGATE_TO_HOME:
       if (state.currentView === "who is this") {
         return state;
       }
-      return { ...state, currentView: "home" };
+      return loop(
+        { ...state, currentView: "home" },
+        Cmd.action(resetRecognition())
+      );
 
     /*
      * "Who is this?"" - view -> "Home" - view timer
@@ -105,7 +112,10 @@ export function reducer(
       );
 
     case TypeKeys.TIMER_STOPPED:
-      return { ...state, currentView: "home" };
+      return loop(
+        { ...state, currentView: "home" },
+        Cmd.action(resetRecognition())
+      );
 
     case TypeKeys.TIMER_TICK:
       const timeLeft = (state.timeLeftInWhoIsThisView as number) - 1000;
