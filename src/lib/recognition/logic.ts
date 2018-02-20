@@ -3,6 +3,7 @@ import { createModelForFace, recognize } from "../api";
 import { IDetection, IFaceRect } from "../../utils/withTracking";
 import { loop, Cmd } from "redux-loop";
 import { crop } from "../../utils/image";
+import { getBestImageFromBuffer } from "./utils";
 
 const FACE_BUFFER_SIZE = 9;
 
@@ -131,7 +132,6 @@ export const submitFace = (name: string) => {
 export interface IState {
   latestDetection: null | IDetection;
   currentlyRecognized: string[];
-  latestRecognitionCandidate: null | string;
   currentNumberOfFaces: null | number;
   faceBuffer: string[];
   recognitionInProgress: boolean;
@@ -143,7 +143,6 @@ export interface IState {
 const initialState = {
   latestDetection: null,
   currentlyRecognized: [],
-  latestRecognitionCandidate: null,
   currentNumberOfFaces: null,
   faceBuffer: [],
   recognitionInProgress: false,
@@ -196,15 +195,12 @@ export function reducer(state: IState = initialState, action: Action) {
       }
 
       if (newBuffer.length === FACE_BUFFER_SIZE) {
-        // TODO pick the best image from the buffer
-        const frame = image;
+        const frame = getBestImageFromBuffer(newBuffer);
 
         return loop(
           {
             ...newState,
-            recognitionInProgress: true,
-            faceBuffer: [],
-            latestRecognitionCandidate: frame
+            recognitionInProgress: true
           },
           Cmd.run(recognize, {
             args: [frame],
@@ -272,6 +268,7 @@ export function reducer(state: IState = initialState, action: Action) {
 
       const newState = {
         ...state,
+        faceBuffer: action.payload.names.length > 0 ? [] : state.faceBuffer,
         currentlyRecognized: action.payload.names,
         shouldRecognizePeople: false,
         recognitionInProgress: false
@@ -283,16 +280,22 @@ export function reducer(state: IState = initialState, action: Action) {
       return newState;
     }
     case TypeKeys.FACE_RECOGNITION_FAILED:
-      return { ...state, recognitionInProgress: false };
+      return { ...state, faceBuffer: [], recognitionInProgress: false };
 
     case TypeKeys.SUBMIT_FACE:
       return loop(
         state,
         Cmd.run(createModelForFace, {
-          args: [action.payload.name, state.latestRecognitionCandidate],
+          args: [action.payload.name, getBestImageFromBuffer(state.faceBuffer)],
           successActionCreator: faceSaved
         })
       );
+    case TypeKeys.FACE_SAVED:
+      return {
+        ...state,
+        faceBuffer: []
+      };
+
     case TypeKeys.DEBUG_TOGGLE_TRACKING:
       return {
         ...state,

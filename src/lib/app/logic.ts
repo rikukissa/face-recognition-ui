@@ -1,10 +1,10 @@
+import { loop, Cmd } from "redux-loop";
 import { Middleware, MiddlewareAPI, Dispatch } from "redux";
 import {
   TypeKeys as RecognitionActionTypes,
   Action as RecognitionAction
 } from "../recognition/logic";
 import { IApplicationState } from "../../store";
-import { loop, Cmd } from "redux-loop";
 
 export interface IState {
   currentView: "home" | "dashboard" | "who is this";
@@ -84,7 +84,7 @@ export function reducer(
       }
       return { ...state, currentView: "dashboard" };
 
-    case RecognitionActionTypes.SUBMIT_FACE:
+    case RecognitionActionTypes.FACE_SAVED:
       return { ...state, currentView: "home" };
 
     case TypeKeys.NAVIGATE_TO_HOME:

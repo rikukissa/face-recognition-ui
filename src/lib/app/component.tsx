@@ -6,6 +6,7 @@ import { IState as IRecognitionState } from "../recognition/logic";
 import { WhoIsThis } from "./views/WhoIsThis";
 import { IDetection, withTracking } from "../../utils/withTracking";
 import { DEBUG } from "../../utils/config";
+import { withDisplay } from "../../utils/withDisplay";
 
 const Container = styled.div`
   position: relative;
@@ -91,6 +92,7 @@ export interface IDispatchProps {
 }
 
 const TrackingCamera = withTracking(Camera);
+const CameraDisplay = withDisplay(Camera);
 
 export class App extends React.Component<IProps & IDispatchProps> {
   private submitFace = (name: string) => {
@@ -103,6 +105,7 @@ export class App extends React.Component<IProps & IDispatchProps> {
         {this.props.currentView === "home" && (
           <div>
             <h1>index</h1>
+            <CameraDisplay />
             <TrackingCamera
               onFacesDetected={this.props.facesDetected}
               trackingStoppedForDebugging={

@@ -16,17 +16,21 @@ export async function recognize(image: string): Promise<string[]> {
   return res.data.FaceMatches.map((match: any) => match.Face.ExternalImageId);
 }
 
-export function createModelForFace(id: string, image: string) {
-  const data = new FormData();
+export async function createModelForFace(id: string, images: string[]) {
+  for (const image of images) {
+    const data = new FormData();
 
-  data.append("id", id);
-  data.append(
-    "file",
-    b64toBlob(image.replace("data:image/png;base64,", ""), "image/png")
-  );
-
-  return axios.post(
-    "https://naama-app-face-recognizer.herokuapp.com/faces",
-    data
-  );
+    data.append("id", id);
+    data.append(
+      "file",
+      b64toBlob(image.replace("data:image/png;base64,", ""), "image/png")
+    );
+    try {
+      await axios.post(
+        "https://naama-app-face-recognizer.herokuapp.com/faces",
+        data
+      );
+      // tslint:disable
+    } catch (error) {}
+  }
 }

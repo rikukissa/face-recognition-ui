@@ -138,8 +138,10 @@ function chromeExperimentalTracker(
     }
     try {
       const result = await faceDetector.detect($source);
-      if (result.length > 0) {
-        console.log(result);
+
+      if (stopped) {
+        // Stopped while still trying to detect something
+        return;
       }
 
       onDetect({
