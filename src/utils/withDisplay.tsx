@@ -3,6 +3,7 @@ import { IProps as ICameraProps } from "../components/Camera";
 
 export interface IProps {
   className?: string;
+  filter?: (imageData: ImageData) => ImageData;
 }
 
 export function withDisplay(
@@ -47,6 +48,19 @@ export function withDisplay(
         this.$canvas.width,
         this.$canvas.height
       );
+      if (
+        this.props.filter &&
+        this.$canvas.width > 0 &&
+        this.$canvas.height > 0
+      ) {
+        const imageData = context.getImageData(
+          0,
+          0,
+          this.$canvas.width,
+          this.$canvas.height
+        );
+        context.putImageData(this.props.filter(imageData), 0, 0);
+      }
       window.requestAnimationFrame(this.reflectVideoToCanvas);
     };
 
