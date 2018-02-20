@@ -194,7 +194,13 @@ export function reducer(state: IState = initialState, action: Action) {
         return newState;
       }
 
-      if (newBuffer.length === FACE_BUFFER_SIZE) {
+      const shouldRecognize =
+        // Only recognize once per buffer. If the buffer isn't cleared,
+        // there's no need to rerecognize since it's most likely the same person
+        newBuffer.length > state.faceBuffer.length &&
+        newBuffer.length === FACE_BUFFER_SIZE;
+
+      if (shouldRecognize) {
         const frame = getBestImageFromBuffer(newBuffer);
 
         return loop(
@@ -202,6 +208,7 @@ export function reducer(state: IState = initialState, action: Action) {
             ...newState,
             recognitionInProgress: true
           },
+
           Cmd.run(recognize, {
             args: [frame],
             successActionCreator: facesRecognised,
@@ -225,19 +232,18 @@ export function reducer(state: IState = initialState, action: Action) {
       const amountChanged =
         !latestDetection || latestDetection.amount !== detection.amount;
 
-      const shouldKeepBuffer =
-        (!amountChanged && detection.amount === 1) || firstFaceInPicture;
-
-      let newFirstFaceInPicture = null;
-
-      if (firstFaceInPicture) {
-        newFirstFaceInPicture = firstFaceInPicture;
-      } else if (
+      const newFaceAppeared =
         (!latestDetection || latestDetection.amount === 0) &&
-        detection.amount === 1
-      ) {
-        newFirstFaceInPicture = detection.data[0];
-      }
+        detection.amount === 1;
+
+      const newFirstFaceInPicture = firstFaceInPicture
+        ? firstFaceInPicture
+        : detection.data[0];
+
+      const shouldKeepBuffer =
+        (((!amountChanged && detection.amount === 1) || firstFaceInPicture) &&
+          firstFaceInPicture) ||
+        newFaceAppeared;
 
       const newState = {
         ...state,
@@ -268,7 +274,6 @@ export function reducer(state: IState = initialState, action: Action) {
 
       const newState = {
         ...state,
-        faceBuffer: action.payload.names.length > 0 ? [] : state.faceBuffer,
         currentlyRecognized: action.payload.names,
         shouldRecognizePeople: false,
         recognitionInProgress: false
