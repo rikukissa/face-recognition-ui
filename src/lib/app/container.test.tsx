@@ -16,7 +16,13 @@ jest.useFakeTimers();
 configure({ adapter: new Adapter() });
 
 jest.mock("../../components/Camera", () => "div");
-jest.mock("../../utils/withTracking", () => ({ withTracking: () => "div" }));
+jest.mock("../../utils/image", () => ({ crop: (image: string) => image }));
+jest.mock("../../utils/withTracking", () => ({
+  withTracking: () => () => "div"
+}));
+jest.mock("../../utils/withDisplay", () => ({
+  withDisplay: () => () => "div"
+}));
 jest.mock("../../utils/camera", () => () => "div");
 jest.mock("../api", () => ({
   recognize: jest.fn(),
