@@ -135,7 +135,6 @@ export interface IState {
   currentNumberOfFaces: null | number;
   faceBuffer: string[];
   recognitionInProgress: boolean;
-  shouldRecognizePeople: boolean;
   trackingStoppedForDebugging: boolean;
   firstFaceDetected: null | IFaceRect;
 }
@@ -146,7 +145,6 @@ const initialState = {
   currentNumberOfFaces: null,
   faceBuffer: [],
   recognitionInProgress: false,
-  shouldRecognizePeople: true,
   trackingStoppedForDebugging: false,
   firstFaceDetected: null
 };
@@ -190,9 +188,6 @@ export function reducer(state: IState = initialState, action: Action) {
 
       const newBuffer = faceBuffer.concat(image).slice(-FACE_BUFFER_SIZE);
       const newState = { ...state, faceBuffer: newBuffer };
-      if (!newState.shouldRecognizePeople) {
-        return newState;
-      }
 
       const shouldRecognize =
         // Only recognize once per buffer. If the buffer isn't cleared,
@@ -247,10 +242,6 @@ export function reducer(state: IState = initialState, action: Action) {
 
       const newState = {
         ...state,
-        // Start recognizing people again when amount changes
-        shouldRecognizePeople: state.shouldRecognizePeople
-          ? state.shouldRecognizePeople
-          : amountChanged,
         latestDetection: detection,
         firstFaceDetected: newFirstFaceInPicture,
         faceBuffer: !shouldKeepBuffer ? [] : state.faceBuffer
@@ -275,7 +266,6 @@ export function reducer(state: IState = initialState, action: Action) {
       const newState = {
         ...state,
         currentlyRecognized: action.payload.names,
-        shouldRecognizePeople: false,
         recognitionInProgress: false
       };
 
@@ -291,7 +281,7 @@ export function reducer(state: IState = initialState, action: Action) {
       return loop(
         state,
         Cmd.run(createModelForFace, {
-          args: [action.payload.name, getBestImageFromBuffer(state.faceBuffer)],
+          args: [action.payload.name, state.faceBuffer],
           successActionCreator: faceSaved
         })
       );
