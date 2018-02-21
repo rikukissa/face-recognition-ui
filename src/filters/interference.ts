@@ -8,6 +8,10 @@ export function interferenceFilter(context: CanvasRenderingContext2D) {
   const interferenceHeight = context.canvas.height / 5;
   const interferenceOffset = Math.sin(frame * 0.2) * 10;
 
+  if (Math.random() < 0.8) {
+    return;
+  }
+
   // Clone image to new canvas
   cloneCanvas.width = context.canvas.width;
   cloneCanvas.height = context.canvas.height;

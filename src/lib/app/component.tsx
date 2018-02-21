@@ -8,9 +8,23 @@ import { IDetection, withTracking } from "../../utils/withTracking";
 import { DEBUG } from "../../utils/config";
 import { withDisplay } from "../../utils/withDisplay";
 import { interferenceFilter } from "../../filters/interference";
+import { faceAppFilter } from "../../filters/face-app";
 
 const Container = styled.div`
   position: relative;
+  height: 100%;
+  background: radial-gradient(ellipse at center, #080a20 0%, #0d0e19 100%);
+`;
+
+const ViewContainer = styled.div`
+  height: 100%;
+`;
+
+const PersonName = styled.h1`
+  position: absolute;
+  background: #000;
+  color: #fff;
+  margin: 1em;
 `;
 
 const Overlay = styled.div`
@@ -80,6 +94,7 @@ export interface IProps {
   currentlyRecognized: null | string;
   latestRecognitionCandidate: null | string;
   currentView: IState["currentView"];
+  isAwake: IState["isAwake"];
   latestDetection: IRecognitionState["latestDetection"];
   faceBuffer: IRecognitionState["faceBuffer"];
   trackingStoppedForDebugging: IRecognitionState["trackingStoppedForDebugging"];
@@ -93,7 +108,9 @@ export interface IDispatchProps {
 }
 
 const TrackingCamera = withTracking(Camera);
-const CameraDisplay = withDisplay(Camera);
+const CameraDisplay = styled(withDisplay(Camera))`
+  width: 100%;
+`;
 
 export class App extends React.Component<IProps & IDispatchProps> {
   private submitFace = (name: string) => {
@@ -104,27 +121,40 @@ export class App extends React.Component<IProps & IDispatchProps> {
     return (
       <Container>
         {this.props.currentView === "home" && (
-          <div>
-            <h1>index</h1>
-            <CameraDisplay filter={interferenceFilter} />
+          <ViewContainer>
+            {this.props.isAwake && (
+              <CameraDisplay
+                filter={context => {
+                  faceAppFilter(context);
+                  interferenceFilter(context);
+                }}
+              />
+            )}
+
             <TrackingCamera
               onFacesDetected={this.props.facesDetected}
               trackingStoppedForDebugging={
                 this.props.trackingStoppedForDebugging
               }
             />
-          </div>
+          </ViewContainer>
         )}
 
         {this.props.currentView === "dashboard" && (
           <Overlay>
+            <PersonName>{this.props.currentlyRecognized}</PersonName>
             <TrackingCamera
               onFacesDetected={this.props.facesDetected}
               trackingStoppedForDebugging={
                 this.props.trackingStoppedForDebugging
               }
             />
-            <h1>{this.props.currentlyRecognized}</h1>
+            <CameraDisplay
+              filter={context => {
+                faceAppFilter(context);
+                interferenceFilter(context);
+              }}
+            />
           </Overlay>
         )}
         {this.props.currentView === "who is this" &&

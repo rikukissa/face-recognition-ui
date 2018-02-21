@@ -7,11 +7,6 @@ import {
 } from "../recognition/logic";
 import { IApplicationState } from "../../store";
 
-export interface IState {
-  currentView: "home" | "dashboard" | "who is this";
-  timeLeftInWhoIsThisView: null | number;
-}
-
 export enum TypeKeys {
   NAVIGATE_TO_HOME = "app/NAVIGATE_TO_HOME",
   TIMER_STARTED = "app/TIMER_STARTED",
@@ -66,9 +61,17 @@ function tick(): ITickAction {
 function wait1Second() {
   return new Promise(resolve => setTimeout(resolve, 1000));
 }
+
+export interface IState {
+  currentView: "home" | "dashboard" | "who is this";
+  timeLeftInWhoIsThisView: null | number;
+  isAwake: boolean;
+}
+
 const initialState: IState = {
   currentView: "home",
-  timeLeftInWhoIsThisView: null
+  timeLeftInWhoIsThisView: null,
+  isAwake: false
 };
 
 export function reducer(
@@ -76,6 +79,11 @@ export function reducer(
   action: Action | RecognitionAction
 ) {
   switch (action.type) {
+    case RecognitionActionTypes.FACES_DETECTED:
+      if (action.payload.detection.amount > 0) {
+        return { ...state, isAwake: true };
+      }
+      return state;
     case RecognitionActionTypes.FACE_RECOGNISED:
       if (action.payload.names.length === 0 && state.currentView === "home") {
         return loop(
@@ -96,7 +104,7 @@ export function reducer(
         return state;
       }
       return loop(
-        { ...state, currentView: "home" },
+        { ...state, isAwake: false, currentView: "home" },
         Cmd.action(resetRecognition())
       );
 
