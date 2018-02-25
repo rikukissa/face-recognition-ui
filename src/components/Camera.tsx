@@ -20,6 +20,7 @@ $video.setAttribute(
   left: -${VIDEO_WIDTH}px;
 `
 );
+
 $video.addEventListener(
   "loadedmetadata",
   function(e) {

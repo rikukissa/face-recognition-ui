@@ -1,5 +1,6 @@
 import * as React from "react";
 import { IProps } from "../components/Camera";
+import { connectWebsocket } from "../lib/api";
 
 export interface IFaceRect {
   width: number;
@@ -103,7 +104,7 @@ function websocketTracker(
 ) {
   console.log("using websockets");
 
-  const ws = new WebSocket("ws://localhost:3005", ["websocket"]);
+  const ws = connectWebsocket();
 
   function detect(imageBase64: string): Promise<IDetection> {
     return new Promise(resolve => {
