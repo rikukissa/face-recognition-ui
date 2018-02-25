@@ -45,9 +45,9 @@ export class WhoIsThis extends React.Component<IProps, { name: string }> {
   private setName(name: string) {
     this.setState({ name });
   }
-  private save() {
+  private save = () => {
     this.props.onSave(this.state.name);
-  }
+  };
   public componentDidMount() {
     this.commands = {
       "my name is :name": this.setName,

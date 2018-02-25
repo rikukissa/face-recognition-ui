@@ -68,6 +68,8 @@ interface IFaceRecognitionFailedAction {
 }
 
 function faceRecognitionFailed(error: Error): Action {
+  console.log(error);
+
   return {
     type: TypeKeys.FACE_RECOGNITION_FAILED,
     payload: { error }

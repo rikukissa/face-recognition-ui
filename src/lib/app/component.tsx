@@ -132,7 +132,8 @@ export class App extends React.Component<IProps & IDispatchProps> {
       <Container>
         {this.props.currentView === "home" && (
           <ViewContainer>
-            {this.props.isAwake && <CameraDisplay />}
+            <CameraDisplay />
+            {/* {this.props.isAwake && <CameraDisplay />} */}
 
             <TrackingCamera
               onFacesDetected={this.props.facesDetected}

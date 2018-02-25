@@ -6,6 +6,7 @@ import { createStore, IApplicationState } from "../../store";
 import App from "./container";
 import { facesDetected } from "../recognition/logic";
 import { recognize } from "../api";
+import { IFaceRect } from "../../utils/withTracking";
 
 /*
  * Test runner config
@@ -16,7 +17,9 @@ jest.useFakeTimers();
 configure({ adapter: new Adapter() });
 
 jest.mock("../../components/Camera", () => "div");
-jest.mock("../../utils/image", () => ({ crop: (image: string) => image }));
+jest.mock("../../utils/image", () => ({
+  crop: (image: string, rect: IFaceRect) => Promise.resolve(image)
+}));
 jest.mock("../../utils/withTracking", () => ({
   withTracking: () => () => "div"
 }));
@@ -104,7 +107,7 @@ describe("App", () => {
           jest.runOnlyPendingTimers();
           expect(store.getState().app.currentView).toEqual("dashboard");
         });
-        it("goes to new person's dashboard if it's not the same face", async () => {
+        it.only("goes to new person's dashboard if it's not the same face", async () => {
           (recognize as jest.Mock<Promise<string[]>>).mockReturnValue(
             Promise.resolve(["foobar"])
           );
