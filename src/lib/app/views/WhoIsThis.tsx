@@ -1,14 +1,34 @@
 import * as React from "react";
 import styled from "styled-components";
 import * as annyang from "annyang";
+import { withDisplay } from "../../../utils/withDisplay";
+import { Camera } from "../../../components/Camera";
 
+const CameraDisplay = styled(withDisplay(Camera))`
+  width: 100%;
+`;
+const Text = styled.div`
+  padding: 1em;
+  position: absolute;
+  top: 0;
+  left: 0;
+`;
 const Overlay = styled.div`
   position: fixed;
   top: 0;
   left: 0;
   bottom: 0;
   right: 0;
-  background: #abffab;
+  color: #fff;
+`;
+const Title = styled.h1`
+  background: #000;
+  color: #fff;
+`;
+
+const Description = styled.span`
+  background: #000;
+  color: #fff;
 `;
 
 interface IProps {
@@ -50,21 +70,24 @@ export class WhoIsThis extends React.Component<IProps, { name: string }> {
   }
 
   public render() {
-    const { image } = this.props;
     return (
       <Overlay>
-        <h1>Who is this?</h1>
-        <p>
-          I'm ...<br />
-          My name is ...
-        </p>
-        {this.state.name !== "" && (
-          <div>
-            <h2>Hey {this.state.name}</h2>
-            <h2>say "save" when you're done</h2>
-          </div>
-        )}
-        {image && <img src={image} />}
+        <Text>
+          {this.state.name === "" && (
+            <div>
+              <Title>Who is this?</Title>
+              <Description>
+                I'm ...<br />
+                My name is ...
+              </Description>
+            </div>
+          )}
+          {this.state.name !== "" && (
+            <Title>Hey {this.state.name}! say "save" when you're done</Title>
+          )}
+        </Text>
+
+        <CameraDisplay />
       </Overlay>
     );
   }
