@@ -38,7 +38,7 @@ $video.addEventListener(
   false
 );
 
-if (!DEBUG) {
+if (DEBUG) {
   $video.src = "./sample2.mp4";
   $video.setAttribute("loop", "false");
 } else {

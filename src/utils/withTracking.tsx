@@ -86,7 +86,9 @@ function chromeExperimentalTracker(
         }))
       });
       // tslint:disable
-    } catch (err) {}
+    } catch (err) {
+      console.log(err);
+    }
     window.requestAnimationFrame(loop);
   }
   loop();
@@ -153,7 +155,7 @@ export function withTracking(WrappedComponent: React.ComponentClass<IProps>) {
     private $video: HTMLVideoElement;
 
     public async componentDidMount() {
-      this.tracker = ((window as any).FaceDetectorTODO
+      this.tracker = ((window as any).FaceDetector
         ? chromeExperimentalTracker
         : websocketTracker)(this.$video, (event: IDetectionEvent) => {
         /*

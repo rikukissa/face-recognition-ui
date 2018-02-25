@@ -38,21 +38,20 @@ interface IProps {
 
 export class WhoIsThis extends React.Component<IProps, { name: string }> {
   private commands: { [key: string]: (param: string) => void } = {};
+  private $input: HTMLInputElement;
   public state = {
     name: ""
   };
-
+  private setName(name: string) {
+    this.setState({ name });
+  }
+  private save() {
+    this.props.onSave(this.state.name);
+  }
   public componentDidMount() {
     this.commands = {
-      "my name is :name": (name: string) => {
-        this.setState({ name });
-      },
-      "I'm :name": (name: string) => {
-        this.setState({ name });
-      },
-      save: () => {
-        this.props.onSave(this.state.name);
-      },
+      "my name is :name": this.setName,
+      save: this.save,
       // Debug route
       hello: () => {
         alert("hello");
@@ -64,6 +63,8 @@ export class WhoIsThis extends React.Component<IProps, { name: string }> {
 
     // Start listening.
     annyang.start();
+
+    this.$input.focus();
   }
   public componentWillUnmount() {
     annyang.removeCommands(Object.keys(this.commands));
@@ -77,13 +78,21 @@ export class WhoIsThis extends React.Component<IProps, { name: string }> {
             <div>
               <Title>Who is this?</Title>
               <Description>
-                I'm ...<br />
                 My name is ...
+                <form onSubmit={() => this.setName(this.$input.value)}>
+                  <input
+                    type="text"
+                    ref={($el: HTMLInputElement) => (this.$input = $el)}
+                  />
+                </form>
               </Description>
             </div>
           )}
           {this.state.name !== "" && (
-            <Title>Hey {this.state.name}! say "save" when you're done</Title>
+            <Title>
+              Hey {this.state.name}! say{" "}
+              <button onClick={this.save}>save</button> when you're done
+            </Title>
           )}
         </Text>
 
