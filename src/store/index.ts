@@ -10,6 +10,11 @@ import {
 } from "../lib/recognition/logic";
 
 import {
+  reducer as missingHours,
+  IState as IMissingHoursState
+} from "../lib/missing-hours/logic";
+
+import {
   reducer as app,
   IState as IAppState,
   timerMiddleware
@@ -18,6 +23,7 @@ import {
 export interface IApplicationState {
   app: IAppState;
   recognition: IRecognitionState;
+  missingHours: IMissingHoursState;
 }
 
 const enhancer = compose(install(), applyMiddleware(timerMiddleware));
@@ -26,7 +32,8 @@ export const storeCreator = () =>
   enhancedCreateStore(
     combineReducers({
       app,
-      recognition
+      recognition,
+      missingHours
     }),
     undefined,
     enhancer

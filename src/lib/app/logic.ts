@@ -6,6 +6,7 @@ import {
   reset as resetRecognition
 } from "../recognition/logic";
 import { IApplicationState } from "../../store";
+import { requestMissingHours } from "../missing-hours/logic";
 
 export enum TypeKeys {
   NAVIGATE_TO_HOME = "app/NAVIGATE_TO_HOME",
@@ -91,7 +92,10 @@ export function reducer(
           Cmd.action(startTimer())
         );
       }
-      return { ...state, currentView: "dashboard" };
+      return loop(
+        { ...state, currentView: "dashboard" },
+        Cmd.action(requestMissingHours(action.payload.names[0]))
+      );
 
     case RecognitionActionTypes.FACE_SAVED:
       return loop(

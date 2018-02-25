@@ -6,6 +6,7 @@ import {
   IState as IRecognitionState,
   IBufferedDetection
 } from "../recognition/logic";
+import { IState as IMissingHoursState } from "../missing-hours/logic";
 import { WhoIsThis } from "./views/WhoIsThis";
 import { IDetection, withTracking, IFaceRect } from "../../utils/withTracking";
 import { DEBUG } from "../../utils/config";
@@ -34,6 +35,21 @@ const Overlay = styled.div`
   left: 0;
   bottom: 0;
   right: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+`;
+
+const MissingHoursContainer = styled.div`
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+`;
+const MissingHours = styled.span`
+  background: #000;
+  color: #fff;
+  font-size: 100px;
 `;
 
 const Debug = styled.div`
@@ -109,6 +125,7 @@ export interface IProps {
   faceBuffer: IRecognitionState["faceBuffer"];
   trackingStoppedForDebugging: IRecognitionState["trackingStoppedForDebugging"];
   firstFaceDetected: IRecognitionState["firstFaceDetected"];
+  missingHours: IMissingHoursState["missingHours"];
 }
 
 export interface IDispatchProps {
@@ -143,10 +160,19 @@ export class App extends React.Component<IProps & IDispatchProps> {
             />
           </ViewContainer>
         )}
-
         {this.props.currentView === "dashboard" && (
           <Overlay>
             <PersonName>{this.props.currentlyRecognized}</PersonName>
+
+            {this.props.missingHours !== null && (
+              <MissingHoursContainer>
+                <MissingHours>
+                  You have <strong>{this.props.missingHours}</strong> missing
+                  hours
+                </MissingHours>
+              </MissingHoursContainer>
+            )}
+
             <TrackingCamera
               onFacesDetected={this.props.facesDetected}
               trackingStoppedForDebugging={

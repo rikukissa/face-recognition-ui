@@ -1,5 +1,6 @@
 import axios from "axios";
 import b64toBlob from "b64-to-blob";
+import { IBufferedDetection } from "./recognition/logic";
 
 const ROOT_DOMAIN = "personal-dashboard-api.herokuapp.com";
 
@@ -27,14 +28,17 @@ export async function transform(image: string): Promise<string> {
   return res.data;
 }
 
-export async function createModelForFace(id: string, images: string[]) {
-  for (const image of images) {
+export async function createModelForFace(
+  id: string,
+  bufferItem: IBufferedDetection[]
+) {
+  for (const item of bufferItem) {
     const data = new FormData();
 
     data.append("id", id);
     data.append(
       "file",
-      b64toBlob(image.replace("data:image/png;base64,", ""), "image/png")
+      b64toBlob(item.image.replace("data:image/png;base64,", ""), "image/png")
     );
     try {
       await axios.post(`https://${ROOT_DOMAIN}/faces`, data);
@@ -43,6 +47,13 @@ export async function createModelForFace(id: string, images: string[]) {
       console.log("error", error);
     }
   }
+}
+
+export async function getMissingHours(userId: string) {
+  const response = await axios.get(
+    `https://${ROOT_DOMAIN}/missing-hours/${userId}`
+  );
+  return response.data.missing;
 }
 
 export function connectWebsocket() {
