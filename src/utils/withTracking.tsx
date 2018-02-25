@@ -1,9 +1,5 @@
 import * as React from "react";
-import "tracking";
-import "tracking/build/data/face";
 import { IProps } from "../components/Camera";
-
-declare const tracking: any;
 
 export interface IFaceRect {
   width: number;
@@ -31,75 +27,9 @@ interface IDetectionEvent {
   data: IFaceRect[];
 }
 
-function createThrottler() {
-  let firstEmptyTime: null | number = 0;
-  return function shouldEmit(event: IDetectionEvent) {
-    const noFaces = event.data.length === 0;
-
-    if (firstEmptyTime === null && noFaces) {
-      firstEmptyTime = Date.now();
-    }
-
-    if (noFaces) {
-      const longEnoughWithoutNoFaces =
-        noFaces && Date.now() - (firstEmptyTime as number) > 3000;
-      if (!longEnoughWithoutNoFaces) {
-        return false;
-      }
-    } else {
-      firstEmptyTime = null;
-    }
-    return true;
-  };
-}
-
 interface ITrackingProps {
   trackingStoppedForDebugging: boolean;
   onFacesDetected: (data: IDetection) => void;
-}
-
-function trackingJSTracker(
-  $source: HTMLVideoElement,
-  onDetect: (event: IDetection) => void
-) {
-  const tracker: any = new tracking.ObjectTracker("face") as any;
-  console.log("using tracking.js");
-
-  // Smaller is more precise but slower
-  tracker.setStepSize(0.5);
-
-  tracker.setInitialScale(4);
-  tracker.setEdgesDensity(0.1);
-
-  const wrapper = tracking.track($source, tracker, {
-    camera: false
-  });
-
-  const shouldEmit = createThrottler();
-
-  tracker.on("track", async (event: IDetectionEvent) => {
-    /*
-   * Tracking sometimes gives random empty results
-   * even when there are faces in the picture
-   */
-    if (!shouldEmit(event)) {
-      return;
-    }
-
-    onDetect({
-      amount: event.data.length,
-      image: createFaceImage($source),
-      data: event.data
-    });
-  });
-
-  return {
-    ...tracker,
-    stop: () => {
-      wrapper.stop();
-      tracker.removeAllListeners("track");
-    }
-  };
 }
 
 interface IChromeDetectionItem {
@@ -167,6 +97,52 @@ function chromeExperimentalTracker(
   };
 }
 
+function websocketTracker(
+  $source: HTMLVideoElement,
+  onDetect: (event: IDetection) => void
+) {
+  console.log("using websockets");
+
+  const ws = new WebSocket("ws://localhost:3005", ["websocket"]);
+
+  function detect(imageBase64: string): Promise<IDetection> {
+    return new Promise(resolve => {
+      function listener(event: any) {
+        ws.removeEventListener("message", listener);
+        const data = JSON.parse(event.data);
+        return resolve({
+          amount: data.objects.length,
+          image: imageBase64,
+          data: data.objects
+        });
+      }
+      ws.addEventListener("message", listener);
+      ws.send(JSON.stringify({ id: Date.now(), image: imageBase64 }));
+    });
+  }
+
+  let stopped = false;
+
+  async function loop() {
+    if (stopped) {
+      return;
+    }
+
+    onDetect(await detect(createFaceImage($source)));
+    window.requestAnimationFrame(loop);
+  }
+  ws.addEventListener("open", function open() {
+    loop();
+  });
+
+  return {
+    stop: () => {
+      stopped = true;
+      ws.close();
+    }
+  };
+}
+
 export function withTracking(WrappedComponent: React.ComponentClass<IProps>) {
   return class ComponentWithTracking extends React.Component<
     ITrackingProps,
@@ -176,9 +152,9 @@ export function withTracking(WrappedComponent: React.ComponentClass<IProps>) {
     private $video: HTMLVideoElement;
 
     public async componentDidMount() {
-      this.tracker = ((window as any).FaceDetector
+      this.tracker = ((window as any).FaceDetectorTODO
         ? chromeExperimentalTracker
-        : trackingJSTracker)(this.$video, (event: IDetectionEvent) => {
+        : websocketTracker)(this.$video, (event: IDetectionEvent) => {
         /*
        * Tracking sometimes gives random empty results
        * even when there are faces in the picture

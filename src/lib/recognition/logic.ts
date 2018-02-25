@@ -94,13 +94,17 @@ function faceReappeared(): IFaceReappearedAction {
 }
 interface IImageToBeBufferedAction {
   type: TypeKeys.IMAGE_RECEIVED_FOR_BUFFERING;
-  payload: { image: string };
+  payload: { detection: IBufferedDetection };
 }
 
-function bufferImage(image: string): IImageToBeBufferedAction {
+export interface IBufferedDetection {
+  image: string;
+  rect: IFaceRect;
+}
+function bufferImage(detection: IBufferedDetection): IImageToBeBufferedAction {
   return {
     type: TypeKeys.IMAGE_RECEIVED_FOR_BUFFERING,
-    payload: { image }
+    payload: { detection }
   };
 }
 
@@ -137,29 +141,6 @@ export const reset = () => {
   };
 };
 
-/*
- * State
- */
-export interface IState {
-  latestDetection: null | IDetection;
-  currentlyRecognized: string[];
-  currentNumberOfFaces: null | number;
-  faceBuffer: string[];
-  recognitionInProgress: boolean;
-  trackingStoppedForDebugging: boolean;
-  firstFaceDetected: null | IFaceRect;
-}
-
-const initialState = {
-  latestDetection: null,
-  currentlyRecognized: [],
-  currentNumberOfFaces: null,
-  faceBuffer: [],
-  recognitionInProgress: false,
-  trackingStoppedForDebugging: false,
-  firstFaceDetected: null
-};
-
 function simpleDist(pointA: IFaceRect, pointB: IFaceRect) {
   const x = pointA.x - pointB.x;
   const y = pointA.y - pointB.y;
@@ -191,6 +172,29 @@ function originalFaceStillInPicture(
   return likelyTheSame ? closest : false;
 }
 
+/*
+ * State
+ */
+export interface IState {
+  latestDetection: null | IDetection;
+  currentlyRecognized: string[];
+  currentNumberOfFaces: null | number;
+  faceBuffer: IBufferedDetection[];
+  recognitionInProgress: boolean;
+  trackingStoppedForDebugging: boolean;
+  firstFaceDetected: null | IFaceRect;
+}
+
+const initialState = {
+  latestDetection: null,
+  currentlyRecognized: [],
+  currentNumberOfFaces: null,
+  faceBuffer: [],
+  recognitionInProgress: false,
+  trackingStoppedForDebugging: false,
+  firstFaceDetected: null
+};
+
 export function reducer(state: IState = initialState, action: Action) {
   const { latestDetection, faceBuffer } = state;
   switch (action.type) {
@@ -198,9 +202,9 @@ export function reducer(state: IState = initialState, action: Action) {
       return initialState;
     }
     case TypeKeys.IMAGE_RECEIVED_FOR_BUFFERING: {
-      const { image } = action.payload;
+      const { detection } = action.payload;
 
-      const newBuffer = faceBuffer.concat(image).slice(-FACE_BUFFER_SIZE);
+      const newBuffer = faceBuffer.concat(detection).slice(-FACE_BUFFER_SIZE);
       const newState = { ...state, faceBuffer: newBuffer };
 
       const shouldRecognize =
@@ -218,8 +222,7 @@ export function reducer(state: IState = initialState, action: Action) {
             recognitionInProgress: true
           },
 
-          Cmd.run(recognize, {
-            args: [frame],
+          Cmd.run(() => crop(frame.image, frame.rect).then(recognize), {
             successActionCreator: facesRecognised,
             failActionCreator: faceRecognitionFailed
           })
@@ -263,10 +266,12 @@ export function reducer(state: IState = initialState, action: Action) {
       if (newFirstFaceInPicture) {
         return loop(
           newState,
-          Cmd.run(crop, {
-            args: [detection.image, newFirstFaceInPicture],
-            successActionCreator: bufferImage
-          })
+          Cmd.action(
+            bufferImage({
+              image: detection.image,
+              rect: newFirstFaceInPicture
+            })
+          )
         );
       }
       return newState;

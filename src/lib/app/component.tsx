@@ -2,13 +2,14 @@ import * as React from "react";
 import styled from "styled-components";
 import { Camera } from "../../components/Camera";
 import { IState } from "./logic";
-import { IState as IRecognitionState } from "../recognition/logic";
+import {
+  IState as IRecognitionState,
+  IBufferedDetection
+} from "../recognition/logic";
 import { WhoIsThis } from "./views/WhoIsThis";
-import { IDetection, withTracking } from "../../utils/withTracking";
+import { IDetection, withTracking, IFaceRect } from "../../utils/withTracking";
 import { DEBUG } from "../../utils/config";
 import { withDisplay } from "../../utils/withDisplay";
-import { interferenceFilter } from "../../filters/interference";
-import { faceAppFilter } from "../../filters/face-app";
 
 const Container = styled.div`
   position: relative;
@@ -45,8 +46,18 @@ const Debug = styled.div`
 `;
 const DebugFaceBuffer = styled.div``;
 
-const DebugBufferFrame = styled.img`
-  width: 120px;
+const DebugBufferFrame = styled.div.attrs<{
+  rect: IFaceRect;
+  image: string;
+}>({
+  style: ({ image, rect }: { image: string; rect: IFaceRect }) => ({
+    width: `${rect.width + 60}px`,
+    height: `${rect.height + 60}px`,
+    backgroundImage: `url(${image})`,
+    backgroundPosition: `-${rect.x - 30}px -${rect.y - 30}px`
+  })
+})`
+  display: inline-block;
 `;
 
 const DebugCamera = styled.div`
@@ -91,7 +102,7 @@ const DebugSquare = styled.div.attrs<{
 
 export interface IProps {
   currentlyRecognized: null | string;
-  latestRecognitionCandidate: null | string;
+  latestRecognitionCandidate: null | IBufferedDetection;
   currentView: IState["currentView"];
   isAwake: IState["isAwake"];
   latestDetection: IRecognitionState["latestDetection"];
@@ -121,14 +132,7 @@ export class App extends React.Component<IProps & IDispatchProps> {
       <Container>
         {this.props.currentView === "home" && (
           <ViewContainer>
-            {this.props.isAwake && (
-              <CameraDisplay
-                filter={context => {
-                  faceAppFilter(context);
-                  interferenceFilter(context);
-                }}
-              />
-            )}
+            {this.props.isAwake && <CameraDisplay />}
 
             <TrackingCamera
               onFacesDetected={this.props.facesDetected}
@@ -148,19 +152,14 @@ export class App extends React.Component<IProps & IDispatchProps> {
                 this.props.trackingStoppedForDebugging
               }
             />
-            <CameraDisplay
-              filter={context => {
-                faceAppFilter(context);
-                interferenceFilter(context);
-              }}
-            />
+            <CameraDisplay />
           </Overlay>
         )}
         {this.props.currentView === "who is this" &&
           this.props.latestRecognitionCandidate && (
             <WhoIsThis
               onSave={this.submitFace}
-              image={this.props.latestRecognitionCandidate}
+              image={this.props.latestRecognitionCandidate.image}
             />
           )}
         {DEBUG &&
@@ -185,9 +184,15 @@ export class App extends React.Component<IProps & IDispatchProps> {
                 </DebugFooter>
               </DebugCamera>
               <DebugFaceBuffer>
-                {this.props.faceBuffer.map((image: string, i) => (
-                  <DebugBufferFrame key={i} src={image} />
-                ))}
+                {this.props.faceBuffer.map(
+                  (bufferItem: IBufferedDetection, i) => (
+                    <DebugBufferFrame
+                      key={i}
+                      rect={bufferItem.rect}
+                      image={bufferItem.image}
+                    />
+                  )
+                )}
               </DebugFaceBuffer>
             </Debug>
           )}
