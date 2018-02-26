@@ -1,6 +1,5 @@
 import * as React from "react";
 import { getStream } from "../utils/camera";
-import { DEBUG } from "../utils/config";
 
 const VIDEO_WIDTH = 320;
 const VIDEO_HEIGHT = 240;
@@ -38,14 +37,9 @@ $video.addEventListener(
   false
 );
 
-if (DEBUG) {
-  $video.src = "./sample2.mp4";
-  $video.setAttribute("loop", "false");
-} else {
-  getStream().then(stream => {
-    $video.srcObject = stream;
-  });
-}
+getStream().then(stream => {
+  $video.srcObject = stream;
+});
 
 export interface IProps {
   innerRef?: ($el: HTMLVideoElement) => void;

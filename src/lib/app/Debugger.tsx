@@ -14,13 +14,12 @@ import { imageDataToURL } from "../../utils/image";
 
 const Debug = styled.div`
   width: 100%;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  z-index: 2;
+  background: #000;
+`;
+
+const DebugFaceBuffer = styled.div`
   display: flex;
 `;
-const DebugFaceBuffer = styled.div``;
 
 const DebugBufferFrame = styled.div.attrs<{
   rect: IFaceRect;
@@ -36,6 +35,10 @@ const DebugBufferFrame = styled.div.attrs<{
   display: inline-block;
 `;
 
+const DebugCameraContainer = styled.div`
+  display: flex;
+  justify-content: center;
+`;
 const DebugCamera = styled.div`
   position: relative;
 `;
@@ -97,24 +100,26 @@ class DebuggerComponent extends React.Component<IProps & IDispatchProps> {
 
     return (
       <Debug>
-        <DebugCamera>
-          <img src={imageDataToURL(this.props.latestDetection.image)} />
-          {this.props.latestDetection.data.map((rect, i) => (
-            <DebugSquare
-              {...rect}
-              firstDetected={rect === this.props.firstFaceDetected}
-              key={i}
-            />
-          ))}
-          <DebugFooter>
-            {this.props.latestDetection.amount} faces
-            <button onClick={this.props.toggleTracking}>
-              {this.props.trackingStoppedForDebugging
-                ? "resume tracking"
-                : "pause tracking"}
-            </button>
-          </DebugFooter>
-        </DebugCamera>
+        <DebugCameraContainer>
+          <DebugCamera>
+            <img src={imageDataToURL(this.props.latestDetection.image)} />
+            {this.props.latestDetection.data.map((rect, i) => (
+              <DebugSquare
+                {...rect}
+                firstDetected={rect === this.props.firstFaceDetected}
+                key={i}
+              />
+            ))}
+            <DebugFooter>
+              {this.props.latestDetection.amount} faces
+              <button onClick={this.props.toggleTracking}>
+                {this.props.trackingStoppedForDebugging
+                  ? "resume tracking"
+                  : "pause tracking"}
+              </button>
+            </DebugFooter>
+          </DebugCamera>
+        </DebugCameraContainer>
         <DebugFaceBuffer>
           {this.props.faceBuffer.map((bufferItem: IBufferedDetection, i) => (
             <DebugBufferFrame

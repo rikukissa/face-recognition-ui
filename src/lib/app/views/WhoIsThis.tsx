@@ -3,6 +3,7 @@ import styled from "styled-components";
 import * as annyang from "annyang";
 import { withDisplay } from "../../../utils/withDisplay";
 import { Camera } from "../../../components/Camera";
+import { View } from "../../../components/View";
 
 const CameraDisplay = styled(withDisplay(Camera))`
   width: 100%;
@@ -13,14 +14,7 @@ const Text = styled.div`
   top: 0;
   left: 0;
 `;
-const Overlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  right: 0;
-  color: #fff;
-`;
+
 const Title = styled.h1`
   background: #000;
   color: #fff;
@@ -71,7 +65,7 @@ export class WhoIsThis extends React.Component<IProps, { name: string }> {
 
   public render() {
     return (
-      <Overlay>
+      <View>
         <Text>
           {this.state.name === "" && (
             <div>
@@ -96,7 +90,7 @@ export class WhoIsThis extends React.Component<IProps, { name: string }> {
         </Text>
 
         <CameraDisplay />
-      </Overlay>
+      </View>
     );
   }
 }

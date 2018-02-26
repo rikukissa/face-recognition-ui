@@ -14,6 +14,7 @@ import { IDetection, withTracking } from "../../utils/withTracking";
 import { Dashboard } from "./views/Dashboard";
 import { DEBUG } from "../../utils/config";
 import { WhoIsThis } from "./views/WhoIsThis";
+import { View } from "../../components/View";
 const Container = styled.div`
   position: relative;
   height: 100%;
@@ -52,7 +53,7 @@ const pulsate = keyframes`
   `;
 
 const Pulse = styled.div.attrs<{ percentageLoaded: number }>({})`
-  position: fixed;
+  position: absolute;
   top: 50%;
   left: 50%;
   animation: ${pulsate} 2s ease-out;
@@ -76,7 +77,7 @@ export class App extends React.Component<IProps & IDispatchProps> {
     return (
       <Container>
         {this.props.currentView === "home" && (
-          <div>
+          <View>
             <Pulse percentageLoaded={this.props.imagesBuffered}>
               <svg
                 width={339 / 3 + "px"}
@@ -100,7 +101,7 @@ export class App extends React.Component<IProps & IDispatchProps> {
                 this.props.trackingStoppedForDebugging
               }
             />
-          </div>
+          </View>
         )}
         {this.props.currentView === "dashboard" && (
           <Dashboard

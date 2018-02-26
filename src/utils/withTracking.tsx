@@ -50,7 +50,7 @@ function chromeExperimentalTracker(
   $source: HTMLVideoElement,
   onDetect: (event: IDetection) => void
 ) {
-  console.log("using chrome");
+  console.log("Using Chrome FaceDetector");
 
   const faceDetector = new (window as any).FaceDetector({
     maxDetectedFaces: 10,
@@ -72,7 +72,7 @@ function chromeExperimentalTracker(
       }
 
       onDetect({
-        amount: result.lenght,
+        amount: result.length,
         image: createFaceImageData($source),
         data: result.map((item: IChromeDetectionItem) => ({
           width: item.boundingBox.width,
@@ -103,7 +103,7 @@ function websocketTracker(
   $source: HTMLVideoElement,
   onDetect: (event: IDetection) => void
 ) {
-  console.log("using websockets");
+  console.log("Using Websocket detector");
 
   const ws = connectWebsocket();
 
@@ -172,7 +172,7 @@ export function withTracking(WrappedComponent: React.ComponentClass<IProps>) {
     private $video: HTMLVideoElement;
 
     public async componentDidMount() {
-      this.tracker = ((window as any).FaceDetectorSD
+      this.tracker = ((window as any).FaceDetector
         ? chromeExperimentalTracker
         : websocketTracker)(this.$video, (event: IDetection) => {
         /*
