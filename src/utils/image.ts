@@ -1,6 +1,6 @@
 import { IFaceRect } from "./withTracking";
 
-export async function crop(src: string, rect: IFaceRect) {
+export function crop(src: ImageData, rect: IFaceRect) {
   const $canvas = document.createElement("canvas");
   const PADDING = 30;
 
@@ -8,14 +8,35 @@ export async function crop(src: string, rect: IFaceRect) {
   $canvas.height = rect.height + PADDING * 2;
 
   const context = $canvas.getContext("2d") as CanvasRenderingContext2D;
-  const image = new Image();
+  context.putImageData(src, -(rect.x - PADDING), -(rect.y - PADDING));
+  return $canvas.toDataURL();
+}
 
-  return new Promise(resolve => {
-    image.onload = () => {
-      // context.drawImage(image, 0, 0);
-      context.drawImage(image, -(rect.x - PADDING), -(rect.y - PADDING));
-      resolve($canvas.toDataURL());
-    };
-    image.src = src;
+export function imageDataToURL(src: ImageData) {
+  const $canvas = document.createElement("canvas");
+  $canvas.width = src.width;
+  $canvas.height = src.height;
+  const context = $canvas.getContext("2d") as CanvasRenderingContext2D;
+  context.putImageData(src, 0, 0);
+  return $canvas.toDataURL();
+}
+
+export async function imageDataToBlob(
+  src: ImageData,
+  mime: string
+): Promise<Blob> {
+  const $canvas = document.createElement("canvas");
+  $canvas.width = src.width;
+  $canvas.height = src.height;
+  const context = $canvas.getContext("2d") as CanvasRenderingContext2D;
+  context.putImageData(src, 0, 0);
+  return new Promise<Blob>((resolve, reject) => {
+    $canvas.toBlob((blob: Blob | null) => {
+      if (blob !== null) {
+        resolve(blob);
+        return;
+      }
+      reject(new Error("Couldn't create blob"));
+    }, mime);
   });
 }

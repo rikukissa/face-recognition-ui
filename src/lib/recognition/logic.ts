@@ -5,7 +5,7 @@ import { loop, Cmd } from "redux-loop";
 import { crop } from "../../utils/image";
 import { getBestImageFromBuffer } from "./utils";
 
-const FACE_BUFFER_SIZE = 3;
+export const FACE_BUFFER_SIZE = 3;
 
 export type Action =
   | IFacesRecognisedAction
@@ -68,8 +68,6 @@ interface IFaceRecognitionFailedAction {
 }
 
 function faceRecognitionFailed(error: Error): Action {
-  console.log(error);
-
   return {
     type: TypeKeys.FACE_RECOGNITION_FAILED,
     payload: { error }
@@ -100,7 +98,7 @@ interface IImageToBeBufferedAction {
 }
 
 export interface IBufferedDetection {
-  image: string;
+  image: ImageData;
   rect: IFaceRect;
 }
 function bufferImage(detection: IBufferedDetection): IImageToBeBufferedAction {
@@ -224,7 +222,8 @@ export function reducer(state: IState = initialState, action: Action) {
             recognitionInProgress: true
           },
 
-          Cmd.run(() => crop(frame.image, frame.rect).then(recognize), {
+          Cmd.run(recognize, {
+            args: [crop(frame.image, frame.rect)],
             successActionCreator: facesRecognised,
             failActionCreator: faceRecognitionFailed
           })
@@ -286,9 +285,7 @@ export function reducer(state: IState = initialState, action: Action) {
 
       const newState = {
         ...state,
-        currentlyRecognized: state.currentlyRecognized.concat(
-          action.payload.names
-        ),
+        currentlyRecognized: action.payload.names,
         recognitionInProgress: false
       };
 

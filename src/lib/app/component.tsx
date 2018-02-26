@@ -1,130 +1,31 @@
 import * as React from "react";
-import styled from "styled-components";
+import styled, { keyframes } from "styled-components";
+import * as shallowCompare from "react-addons-shallow-compare";
 import { Camera } from "../../components/Camera";
+import { Debugger } from "./Debugger";
 import { IState } from "./logic";
 import {
   IState as IRecognitionState,
   IBufferedDetection
 } from "../recognition/logic";
 import { IState as IMissingHoursState } from "../missing-hours/logic";
-import { WhoIsThis } from "./views/WhoIsThis";
-import { IDetection, withTracking, IFaceRect } from "../../utils/withTracking";
-import { DEBUG } from "../../utils/config";
-import { withDisplay } from "../../utils/withDisplay";
 
+import { IDetection, withTracking } from "../../utils/withTracking";
+import { Dashboard } from "./views/Dashboard";
+import { DEBUG } from "../../utils/config";
+import { WhoIsThis } from "./views/WhoIsThis";
 const Container = styled.div`
   position: relative;
   height: 100%;
   background: radial-gradient(ellipse at center, #080a20 0%, #0d0e19 100%);
 `;
 
-const ViewContainer = styled.div`
-  height: 100%;
-`;
-
-const PersonName = styled.h1`
-  position: absolute;
-  background: #000;
-  color: #fff;
-  margin: 1em;
-`;
-
-const Overlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  right: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-`;
-
-const MissingHoursContainer = styled.div`
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-`;
-const MissingHours = styled.span`
-  background: #000;
-  color: #fff;
-  font-size: 100px;
-`;
-
-const Debug = styled.div`
-  width: 100%;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  z-index: 2;
-  display: flex;
-`;
-const DebugFaceBuffer = styled.div``;
-
-const DebugBufferFrame = styled.div.attrs<{
-  rect: IFaceRect;
-  image: string;
-}>({
-  style: ({ image, rect }: { image: string; rect: IFaceRect }) => ({
-    width: `${rect.width + 60}px`,
-    height: `${rect.height + 60}px`,
-    backgroundImage: `url(${image})`,
-    backgroundPosition: `-${rect.x - 30}px -${rect.y - 30}px`
-  })
-})`
-  display: inline-block;
-`;
-
-const DebugCamera = styled.div`
-  position: relative;
-`;
-
-const DebugFooter = styled.div`
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  padding: 1em;
-  background: #fff;
-`;
-
-const DebugSquare = styled.div.attrs<{
-  width: number;
-  height: number;
-  x: number;
-  y: number;
-  firstDetected: boolean;
-}>({
-  style: ({
-    width,
-    height,
-    x,
-    y
-  }: {
-    width: number;
-    height: number;
-    x: number;
-    y: number;
-  }) => ({
-    width: `${width}px`,
-    height: `${height}px`,
-    left: `${x}px`,
-    top: `${y}px`
-  })
-})`
-  position: absolute;
-  border: 1px solid ${({ firstDetected }) => (firstDetected ? "red" : "#fff")};
-`;
-
 export interface IProps {
+  imagesBuffered: number;
   currentlyRecognized: null | string;
-  latestRecognitionCandidate: null | IBufferedDetection;
   currentView: IState["currentView"];
-  isAwake: IState["isAwake"];
-  latestDetection: IRecognitionState["latestDetection"];
-  faceBuffer: IRecognitionState["faceBuffer"];
   trackingStoppedForDebugging: IRecognitionState["trackingStoppedForDebugging"];
-  firstFaceDetected: IRecognitionState["firstFaceDetected"];
+  latestRecognitionCandidate: null | IBufferedDetection;
   missingHours: IMissingHoursState["missingHours"];
 }
 
@@ -135,94 +36,85 @@ export interface IDispatchProps {
 }
 
 const TrackingCamera = withTracking(Camera);
-const CameraDisplay = styled(withDisplay(Camera))`
-  width: 100%;
+
+const pulsate = keyframes`
+  0% {
+    transform: scale(.1) translate(-50%, -50%);
+    opacity: 0.0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.2) translate(-50%, -50%);
+    opacity: 0;
+  }
+  `;
+
+const Pulse = styled.div.attrs<{ percentageLoaded: number }>({})`
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  animation: ${pulsate} 2s ease-out;
+  animation-iteration-count: infinite;
+  transform: translate(-50%, -50%);
+  transform-origin: top left;
+  polygon {
+    fill: ${({ percentageLoaded }) =>
+      `rgba(112, 87, 255, ${percentageLoaded})`};
+  }
 `;
 
 export class App extends React.Component<IProps & IDispatchProps> {
   private submitFace = (name: string) => {
     this.props.submitFace(name);
   };
-
+  public shouldComponentUpdate(nextProps: IProps, nextState: any): boolean {
+    return shallowCompare(this, nextProps, nextState);
+  }
   public render() {
     return (
       <Container>
         {this.props.currentView === "home" && (
-          <ViewContainer>
-            <CameraDisplay />
-            {/* {this.props.isAwake && <CameraDisplay />} */}
-
+          <div>
+            <Pulse percentageLoaded={this.props.imagesBuffered}>
+              <svg
+                width={339 / 3 + "px"}
+                height={391 / 3 + "px"}
+                viewBox="0 0 339 391"
+                version="1.1"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <g stroke="none" strokeWidth="1" fill="none" fillRule="evenodd">
+                  <polygon
+                    stroke="#7057FF"
+                    strokeWidth="5"
+                    points="169.5 3 336.20989 99.25 336.20989 291.75 169.5 388 2.79010977 291.75 2.79010977 99.25"
+                  />
+                </g>
+              </svg>
+            </Pulse>
             <TrackingCamera
               onFacesDetected={this.props.facesDetected}
               trackingStoppedForDebugging={
                 this.props.trackingStoppedForDebugging
               }
             />
-          </ViewContainer>
+          </div>
         )}
         {this.props.currentView === "dashboard" && (
-          <Overlay>
-            <PersonName>{this.props.currentlyRecognized}</PersonName>
-
-            {this.props.missingHours !== null && (
-              <MissingHoursContainer>
-                <MissingHours>
-                  You have <strong>{this.props.missingHours}</strong> missing
-                  hours
-                </MissingHours>
-              </MissingHoursContainer>
-            )}
-
-            <TrackingCamera
-              onFacesDetected={this.props.facesDetected}
-              trackingStoppedForDebugging={
-                this.props.trackingStoppedForDebugging
-              }
-            />
-            <CameraDisplay />
-          </Overlay>
+          <Dashboard
+            currentlyRecognized={this.props.currentlyRecognized}
+            missingHours={this.props.missingHours}
+            onFacesDetected={this.props.facesDetected}
+            trackingStoppedForDebugging={this.props.trackingStoppedForDebugging}
+          />
         )}
         {this.props.currentView === "who is this" &&
           this.props.latestRecognitionCandidate && (
-            <WhoIsThis
-              onSave={this.submitFace}
-              image={this.props.latestRecognitionCandidate.image}
-            />
+            <WhoIsThis onSave={this.submitFace} />
           )}
-        {DEBUG &&
-          this.props.latestDetection && (
-            <Debug>
-              <DebugCamera>
-                <img src={this.props.latestDetection.image} />
-                {this.props.latestDetection.data.map((rect, i) => (
-                  <DebugSquare
-                    {...rect}
-                    firstDetected={rect === this.props.firstFaceDetected}
-                    key={i}
-                  />
-                ))}
-                <DebugFooter>
-                  {this.props.latestDetection.amount} faces
-                  <button onClick={this.props.toggleTracking}>
-                    {this.props.trackingStoppedForDebugging
-                      ? "resume tracking"
-                      : "pause tracking"}
-                  </button>
-                </DebugFooter>
-              </DebugCamera>
-              <DebugFaceBuffer>
-                {this.props.faceBuffer.map(
-                  (bufferItem: IBufferedDetection, i) => (
-                    <DebugBufferFrame
-                      key={i}
-                      rect={bufferItem.rect}
-                      image={bufferItem.image}
-                    />
-                  )
-                )}
-              </DebugFaceBuffer>
-            </Debug>
-          )}
+        {DEBUG && <Debugger />}
       </Container>
     );
   }

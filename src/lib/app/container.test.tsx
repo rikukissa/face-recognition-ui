@@ -29,6 +29,7 @@ jest.mock("../../utils/withDisplay", () => ({
 jest.mock("../../utils/camera", () => () => "div");
 jest.mock("../api", () => ({
   recognize: jest.fn(),
+  getMissingHours: jest.fn(),
   createModelForFace: () => Promise.resolve()
 }));
 jest.mock("annyang", () => ({
@@ -37,8 +38,12 @@ jest.mock("annyang", () => ({
   start: () => null
 }));
 
-const TEST_IMAGE =
-  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z/C/HgAGgwJ/lK3Q6wAAAABJRU5ErkJggg==";
+const TEST_IMAGE = {
+  width: 100,
+  height: 100,
+  data: new Uint8ClampedArray([]),
+  BYTES_PER_ELEMENT: 8
+};
 
 const createView = (store: Store<any>, element: JSX.Element) =>
   mount(<Provider store={store}>{element}</Provider>);
@@ -107,7 +112,7 @@ describe("App", () => {
           jest.runOnlyPendingTimers();
           expect(store.getState().app.currentView).toEqual("dashboard");
         });
-        it.only("goes to new person's dashboard if it's not the same face", async () => {
+        it("goes to new person's dashboard if it's not the same face", async () => {
           (recognize as jest.Mock<Promise<string[]>>).mockReturnValue(
             Promise.resolve(["foobar"])
           );
@@ -122,6 +127,7 @@ describe("App", () => {
             );
           }
           jest.runOnlyPendingTimers();
+
           expect(store.getState().app.currentView).toEqual("dashboard");
           expect(view.text().indexOf("foobar")).toBeGreaterThan(-1);
         });

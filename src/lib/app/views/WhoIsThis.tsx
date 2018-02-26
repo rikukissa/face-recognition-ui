@@ -32,7 +32,6 @@ const Description = styled.span`
 `;
 
 interface IProps {
-  image: string;
   onSave: (name: string) => void;
 }
 

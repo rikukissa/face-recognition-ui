@@ -11,21 +11,17 @@ export interface IFaceRect {
 
 export interface IDetection {
   amount: number;
-  image: string;
+  image: ImageData;
   data: IFaceRect[];
 }
 
-function createFaceImage($video: HTMLVideoElement): string {
+function createFaceImageData($video: HTMLVideoElement): ImageData {
   const $canvas = document.createElement("canvas");
   $canvas.width = $video.width;
   $canvas.height = $video.height;
   const context = $canvas.getContext("2d") as CanvasRenderingContext2D;
   context.drawImage($video, 0, 0, $canvas.width, $canvas.height);
-  return $canvas.toDataURL();
-}
-
-interface IDetectionEvent {
-  data: IFaceRect[];
+  return context.getImageData(0, 0, $canvas.width, $canvas.height);
 }
 
 interface ITrackingProps {
@@ -77,7 +73,7 @@ function chromeExperimentalTracker(
 
       onDetect({
         amount: result.lenght,
-        image: createFaceImage($source),
+        image: createFaceImageData($source),
         data: result.map((item: IChromeDetectionItem) => ({
           width: item.boundingBox.width,
           height: item.boundingBox.height,
@@ -87,9 +83,12 @@ function chromeExperimentalTracker(
       });
       // tslint:disable
     } catch (err) {
-      console.log(err);
+      // console.log(err);
     }
-    window.requestAnimationFrame(loop);
+
+    setTimeout(() => {
+      window.requestAnimationFrame(loop);
+    }, 300);
   }
   loop();
 
@@ -108,19 +107,35 @@ function websocketTracker(
 
   const ws = connectWebsocket();
 
-  function detect(imageBase64: string): Promise<IDetection> {
+  function detect($video: HTMLVideoElement): Promise<IDetection> {
+    const imageData = createFaceImageData($video);
+
     return new Promise(resolve => {
       function listener(event: any) {
         ws.removeEventListener("message", listener);
         const data = JSON.parse(event.data);
+
         return resolve({
           amount: data.objects.length,
-          image: imageBase64,
+          image: imageData,
           data: data.objects
         });
       }
+
       ws.addEventListener("message", listener);
-      ws.send(JSON.stringify({ id: Date.now(), image: imageBase64 }));
+
+      const buffer = new Uint8Array(4 + imageData.data.length);
+
+      buffer.set([
+        (imageData.width >> 8) & 0xff,
+        (imageData.width >> 0) & 0xff,
+        (imageData.height >> 8) & 0xff,
+        (imageData.height >> 0) & 0xff
+      ]);
+
+      buffer.set(imageData.data, 4);
+
+      ws.send(buffer);
     });
   }
 
@@ -131,8 +146,10 @@ function websocketTracker(
       return;
     }
 
-    onDetect(await detect(createFaceImage($source)));
-    window.requestAnimationFrame(loop);
+    onDetect(await detect($source));
+    setTimeout(() => {
+      window.requestAnimationFrame(loop);
+    }, 500);
   }
   ws.addEventListener("open", function open() {
     loop();
@@ -155,9 +172,9 @@ export function withTracking(WrappedComponent: React.ComponentClass<IProps>) {
     private $video: HTMLVideoElement;
 
     public async componentDidMount() {
-      this.tracker = ((window as any).FaceDetector
+      this.tracker = ((window as any).FaceDetectorSD
         ? chromeExperimentalTracker
-        : websocketTracker)(this.$video, (event: IDetectionEvent) => {
+        : websocketTracker)(this.$video, (event: IDetection) => {
         /*
        * Tracking sometimes gives random empty results
        * even when there are faces in the picture
@@ -166,11 +183,7 @@ export function withTracking(WrappedComponent: React.ComponentClass<IProps>) {
           return;
         }
 
-        this.props.onFacesDetected({
-          amount: event.data.length,
-          image: createFaceImage(this.$video),
-          data: event.data
-        });
+        this.props.onFacesDetected(event);
       });
     }
     public componentWillUnmount() {

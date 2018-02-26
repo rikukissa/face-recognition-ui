@@ -92,6 +92,7 @@ export function reducer(
           Cmd.action(startTimer())
         );
       }
+
       return loop(
         { ...state, currentView: "dashboard" },
         Cmd.action(requestMissingHours(action.payload.names[0]))
