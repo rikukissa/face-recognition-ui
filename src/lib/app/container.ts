@@ -7,14 +7,11 @@ import {
   toggleTracking,
   FACE_BUFFER_SIZE
 } from "../recognition/logic";
-import { getBestImageFromBuffer } from "../recognition/utils";
+import { requestPeople } from "../people/logic";
 
 function mapStateToProps(state: IApplicationState) {
   return {
-    latestRecognitionCandidate:
-      state.app.currentView === "who is this"
-        ? getBestImageFromBuffer(state.recognition.faceBuffer)
-        : null,
+    people: state.people.people,
     currentView: state.app.currentView,
     currentlyRecognized: state.recognition.currentlyRecognized[0],
     trackingStoppedForDebugging: state.recognition.trackingStoppedForDebugging,
@@ -26,5 +23,6 @@ function mapStateToProps(state: IApplicationState) {
 export default connect<IProps, IDispatchProps>(mapStateToProps, {
   facesDetected,
   submitFace,
-  toggleTracking
+  toggleTracking,
+  requestPeople
 })(App);

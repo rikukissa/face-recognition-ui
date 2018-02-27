@@ -1,45 +1,57 @@
 import * as React from "react";
 import styled from "styled-components";
 import * as annyang from "annyang";
-import { withDisplay } from "../../../utils/withDisplay";
-import { Camera } from "../../../components/Camera";
-import { View } from "../../../components/View";
+import {
+  View,
+  FullscreenText,
+  Title,
+  Subtitle
+} from "../../../components/View";
+import { IState as IPeopleState } from "../../people/logic";
 
-const CameraDisplay = styled(withDisplay(Camera))`
+const CenteredFullscreenText = styled(FullscreenText)`
+  text-align: center;
+`;
+
+const ListContainer = styled.div`
   width: 100%;
-`;
-const Text = styled.div`
-  padding: 1em;
-  position: absolute;
-  top: 0;
-  left: 0;
-`;
-
-const Title = styled.h1`
-  background: #000;
-  color: #fff;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 `;
 
-const Description = styled.span`
-  background: #000;
-  color: #fff;
+const List = styled.div`
+  width: 50%;
+`;
+
+const PersonButton = styled.button`
+  width: 100%;
+  padding: 0.25em 0;
+  margin-bottom: 0.5em;
+  border: 1px solid #7057ff;
+  background: transparent;
+  font-size: 48px;
+  font-family: inherit;
+  color: #7057ff;
 `;
 
 interface IProps {
+  people: IPeopleState["people"];
   onSave: (name: string) => void;
 }
 
 export class WhoIsThis extends React.Component<IProps, { name: string }> {
   private commands: { [key: string]: (param: string) => void } = {};
-  private $input: HTMLInputElement;
   public state = {
     name: ""
   };
-  private setName(name: string) {
+  private setName = (name: string) => {
     this.setState({ name });
-  }
-  private save = () => {
-    this.props.onSave(this.state.name);
+  };
+  private save = (id: string) => {
+    this.props.onSave(id);
   };
   public componentDidMount() {
     this.commands = {
@@ -56,8 +68,6 @@ export class WhoIsThis extends React.Component<IProps, { name: string }> {
 
     // Start listening.
     annyang.start();
-
-    this.$input.focus();
   }
   public componentWillUnmount() {
     annyang.removeCommands(Object.keys(this.commands));
@@ -66,30 +76,28 @@ export class WhoIsThis extends React.Component<IProps, { name: string }> {
   public render() {
     return (
       <View>
-        <Text>
-          {this.state.name === "" && (
-            <div>
-              <Title>Who is this?</Title>
-              <Description>
-                My name is ...
-                <form onSubmit={() => this.setName(this.$input.value)}>
-                  <input
-                    type="text"
-                    ref={($el: HTMLInputElement) => (this.$input = $el)}
-                  />
-                </form>
-              </Description>
-            </div>
-          )}
-          {this.state.name !== "" && (
-            <Title>
-              Hey {this.state.name}! say{" "}
-              <button onClick={this.save}>save</button> when you're done
-            </Title>
-          )}
-        </Text>
-
-        <CameraDisplay />
+        {this.state.name === "" && (
+          <CenteredFullscreenText>
+            <Title>Who is this?</Title>
+            <br />
+            <br />
+            <Subtitle>🎤 Say "My name is YOUR FIRST NAME"</Subtitle>
+          </CenteredFullscreenText>
+        )}
+        {this.state.name !== "" && (
+          <ListContainer>
+            <List>
+              {this.props.people.map(person => (
+                <PersonButton
+                  onClick={() => this.save(person.id)}
+                  key={person.id}
+                >
+                  {person.firstname}
+                </PersonButton>
+              ))}
+            </List>
+          </ListContainer>
+        )}
       </View>
     );
   }

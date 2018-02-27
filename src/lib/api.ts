@@ -53,6 +53,59 @@ export async function getMissingHours(userId: string) {
   const response = await axios.get(`${ROOT}/missing-hours/${userId}`);
   return response.data.missing;
 }
+export interface IPerson {
+  id: string;
+  firstname: string;
+  lastname: string;
+  office: string;
+}
+
+export async function getPeople(): Promise<IPerson[]> {
+  return Promise.resolve([
+    {
+      firstname: "Rob",
+      lastname: "Ace",
+      office: "London",
+      id: "acer"
+    },
+    {
+      firstname: "Matilda",
+      lastname: "Braxton",
+      office: "London",
+      id: "bram"
+    },
+    {
+      firstname: "Tiia",
+      lastname: "Maunu",
+      office: "Tampere",
+      id: "maut"
+    },
+    {
+      firstname: "Simo",
+      lastname: "Antti",
+      office: "Helsinki",
+      id: "ants"
+    },
+    {
+      firstname: "Marianna",
+      lastname: "Aatos",
+      office: "Helsinki",
+      id: "aatm"
+    },
+    {
+      firstname: "Hulda",
+      lastname: "Helen",
+      office: "Stockholm",
+      id: "helh"
+    },
+    {
+      firstname: "Bengta",
+      lastname: "Torvald",
+      office: "Stockholm",
+      id: "todb"
+    }
+  ]);
+}
 
 export function connectWebsocket() {
   const ws = new WebSocket(`wss://${ROOT_DOMAIN}`, ["websocket"]);

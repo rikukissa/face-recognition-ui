@@ -15,6 +15,8 @@ export enum TypeKeys {
   TIMER_STOPPED = "app/TIMER_STOPPED"
 }
 
+const SHOW_WHO_IS_THIS_VIEW_FOR = 60000;
+
 type Action =
   | INavigateToHomeAction
   | IStartTimerAction
@@ -118,7 +120,7 @@ export function reducer(
      */
     case TypeKeys.TIMER_STARTED:
       return loop(
-        { ...state, timeLeftInWhoIsThisView: 20000 },
+        { ...state, timeLeftInWhoIsThisView: SHOW_WHO_IS_THIS_VIEW_FOR },
         Cmd.run(wait1Second, {
           successActionCreator: tick
         })

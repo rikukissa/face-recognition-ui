@@ -4,11 +4,9 @@ import * as shallowCompare from "react-addons-shallow-compare";
 import { Camera } from "../../components/Camera";
 import { Debugger } from "./Debugger";
 import { IState } from "./logic";
-import {
-  IState as IRecognitionState,
-  IBufferedDetection
-} from "../recognition/logic";
+import { IState as IRecognitionState } from "../recognition/logic";
 import { IState as IMissingHoursState } from "../missing-hours/logic";
+import { IState as IPeopleState } from "../people/logic";
 
 import { IDetection, withTracking } from "../../utils/withTracking";
 import { Dashboard } from "./views/Dashboard";
@@ -26,14 +24,15 @@ export interface IProps {
   currentlyRecognized: null | string;
   currentView: IState["currentView"];
   trackingStoppedForDebugging: IRecognitionState["trackingStoppedForDebugging"];
-  latestRecognitionCandidate: null | IBufferedDetection;
   missingHours: IMissingHoursState["missingHours"];
+  people: IPeopleState["people"];
 }
 
 export interface IDispatchProps {
   facesDetected: (event: IDetection) => void;
   submitFace: (name: string) => void;
   toggleTracking: () => void;
+  requestPeople: () => void;
 }
 
 const TrackingCamera = withTracking(Camera);
@@ -73,6 +72,9 @@ export class App extends React.Component<IProps & IDispatchProps> {
   public shouldComponentUpdate(nextProps: IProps, nextState: any): boolean {
     return shallowCompare(this, nextProps, nextState);
   }
+  public componentDidMount() {
+    this.props.requestPeople();
+  }
   public render() {
     return (
       <Container>
@@ -111,10 +113,9 @@ export class App extends React.Component<IProps & IDispatchProps> {
             trackingStoppedForDebugging={this.props.trackingStoppedForDebugging}
           />
         )}
-        {this.props.currentView === "who is this" &&
-          this.props.latestRecognitionCandidate && (
-            <WhoIsThis onSave={this.submitFace} />
-          )}
+        {this.props.currentView === "who is this" && (
+          <WhoIsThis people={this.props.people} onSave={this.submitFace} />
+        )}
         {DEBUG && <Debugger />}
       </Container>
     );
