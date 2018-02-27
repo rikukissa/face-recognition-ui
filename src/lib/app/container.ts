@@ -4,23 +4,25 @@ import { IApplicationState } from "../../store";
 import {
   facesDetected,
   submitFace,
-  toggleTracking
+  toggleTracking,
+  FACE_BUFFER_SIZE
 } from "../recognition/logic";
+import { requestPeople } from "../people/logic";
 
 function mapStateToProps(state: IApplicationState) {
   return {
+    people: state.people.people,
     currentView: state.app.currentView,
     currentlyRecognized: state.recognition.currentlyRecognized[0],
-    latestRecognitionCandidate: state.recognition.latestRecognitionCandidate,
-    latestDetection: state.recognition.latestDetection,
-    faceBuffer: state.recognition.faceBuffer,
     trackingStoppedForDebugging: state.recognition.trackingStoppedForDebugging,
-    firstFaceDetected: state.recognition.firstFaceDetected
+    missingHours: state.missingHours.missingHours,
+    imagesBuffered: state.recognition.faceBuffer.length / FACE_BUFFER_SIZE
   };
 }
 
 export default connect<IProps, IDispatchProps>(mapStateToProps, {
   facesDetected,
   submitFace,
-  toggleTracking
+  toggleTracking,
+  requestPeople
 })(App);

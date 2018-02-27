@@ -6,6 +6,7 @@ import { createStore, IApplicationState } from "../../store";
 import App from "./container";
 import { facesDetected } from "../recognition/logic";
 import { recognize } from "../api";
+import { IFaceRect } from "../../utils/withTracking";
 
 /*
  * Test runner config
@@ -16,10 +17,19 @@ jest.useFakeTimers();
 configure({ adapter: new Adapter() });
 
 jest.mock("../../components/Camera", () => "div");
-jest.mock("../../utils/withTracking", () => ({ withTracking: () => "div" }));
+jest.mock("../../utils/image", () => ({
+  crop: (image: string, rect: IFaceRect) => Promise.resolve(image)
+}));
+jest.mock("../../utils/withTracking", () => ({
+  withTracking: () => () => "div"
+}));
+jest.mock("../../utils/withDisplay", () => ({
+  withDisplay: () => () => "div"
+}));
 jest.mock("../../utils/camera", () => () => "div");
 jest.mock("../api", () => ({
   recognize: jest.fn(),
+  getMissingHours: jest.fn(),
   createModelForFace: () => Promise.resolve()
 }));
 jest.mock("annyang", () => ({
@@ -28,8 +38,12 @@ jest.mock("annyang", () => ({
   start: () => null
 }));
 
-const TEST_IMAGE =
-  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z/C/HgAGgwJ/lK3Q6wAAAABJRU5ErkJggg==";
+const TEST_IMAGE = {
+  width: 100,
+  height: 100,
+  data: new Uint8ClampedArray([]),
+  BYTES_PER_ELEMENT: 8
+};
 
 const createView = (store: Store<any>, element: JSX.Element) =>
   mount(<Provider store={store}>{element}</Provider>);
@@ -113,6 +127,7 @@ describe("App", () => {
             );
           }
           jest.runOnlyPendingTimers();
+
           expect(store.getState().app.currentView).toEqual("dashboard");
           expect(view.text().indexOf("foobar")).toBeGreaterThan(-1);
         });
