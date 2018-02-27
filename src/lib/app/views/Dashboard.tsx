@@ -5,6 +5,7 @@ import { IState as IRecognitionState } from "../../recognition/logic";
 import { IState as IMissingHoursState } from "../../missing-hours/logic";
 import { Camera } from "../../../components/Camera";
 import { View, FullscreenText, Title } from "../../../components/View";
+import { Speech } from "../../../components/Speech";
 
 const PersonName = styled.h1`
   position: absolute;
@@ -27,10 +28,11 @@ interface IDispatchProps {
 
 export class Dashboard extends React.Component<IProps & IDispatchProps> {
   public render() {
+    const speechText = this.props.currentlyRecognized || "";
     return (
       <View>
         <PersonName>{this.props.currentlyRecognized}</PersonName>
-
+        <Speech text={speechText} />
         {this.props.missingHours !== null && (
           <FullscreenText>
             <Title>
