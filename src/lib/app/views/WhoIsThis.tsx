@@ -1,6 +1,9 @@
 import * as React from "react";
 import styled from "styled-components";
 import * as annyang from "annyang";
+
+import { sayShit } from "../../speech/speak";
+
 import {
   View,
   FullscreenText,
@@ -8,6 +11,7 @@ import {
   Subtitle
 } from "../../../components/View";
 import { IState as IPeopleState } from "../../people/logic";
+
 
 const CenteredFullscreenText = styled(FullscreenText)`
   text-align: center;
@@ -63,12 +67,18 @@ export class WhoIsThis extends React.Component<IProps, { name: string }> {
       }
     };
 
+    // test text-to-speech
+    if (this.state.name.length === 0) {
+      sayShit("Who is this?");
+    }
+
     // Add our commands to annyang
     annyang.addCommands(this.commands);
 
     // Start listening.
     annyang.start();
   }
+
   public componentWillUnmount() {
     annyang.removeCommands(Object.keys(this.commands));
   }
