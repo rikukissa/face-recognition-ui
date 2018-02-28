@@ -2,7 +2,7 @@ import * as React from "react";
 import styled from "styled-components";
 import * as annyang from "annyang";
 
-import { sayShit } from "../../speech/speak";
+import { Speech } from "../../../components/Speech";
 
 import {
   View,
@@ -11,7 +11,6 @@ import {
   Subtitle
 } from "../../../components/View";
 import { IState as IPeopleState } from "../../people/logic";
-
 
 const CenteredFullscreenText = styled(FullscreenText)`
   text-align: center;
@@ -54,9 +53,11 @@ export class WhoIsThis extends React.Component<IProps, { name: string }> {
   private setName = (name: string) => {
     this.setState({ name });
   };
+
   private save = (id: string) => {
     this.props.onSave(id);
   };
+
   public componentDidMount() {
     this.commands = {
       "my name is :name": this.setName,
@@ -66,11 +67,6 @@ export class WhoIsThis extends React.Component<IProps, { name: string }> {
         alert("hello");
       }
     };
-
-    // test text-to-speech
-    if (this.state.name.length === 0) {
-      sayShit("Who is this?");
-    }
 
     // Add our commands to annyang
     annyang.addCommands(this.commands);
@@ -88,6 +84,7 @@ export class WhoIsThis extends React.Component<IProps, { name: string }> {
       <View>
         {this.state.name === "" && (
           <CenteredFullscreenText>
+            <Speech text="Who is this?" />
             <Title>Who is this?</Title>
             <br />
             <br />
@@ -96,6 +93,7 @@ export class WhoIsThis extends React.Component<IProps, { name: string }> {
         )}
         {this.state.name !== "" && (
           <ListContainer>
+            <Speech text={"Is it one of these?"} />
             <List>
               {this.props.people.map(person => (
                 <PersonButton

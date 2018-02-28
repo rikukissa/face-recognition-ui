@@ -13,6 +13,8 @@ import { Dashboard } from "./views/Dashboard";
 import { DEBUG } from "../../utils/config";
 import { WhoIsThis } from "./views/WhoIsThis";
 import { View } from "../../components/View";
+import { Speech } from "../../components/Speech";
+
 const Container = styled.div`
   position: relative;
   height: 100%;
@@ -75,9 +77,12 @@ export class App extends React.Component<IProps & IDispatchProps> {
   public componentDidMount() {
     this.props.requestPeople();
   }
+
   public render() {
+    const greeting = "Salutations, Hacker Man";
     return (
       <Container>
+        <Speech text={greeting} />
         {this.props.currentView === "home" && (
           <View>
             <Pulse percentageLoaded={this.props.imagesBuffered}>
