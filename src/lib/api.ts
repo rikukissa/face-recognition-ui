@@ -3,8 +3,8 @@ import b64toBlob from "b64-to-blob";
 import { IBufferedDetection } from "./recognition/logic";
 import { imageDataToBlob } from "../utils/image";
 
-const ROOT_DOMAIN = "personal-dashboard-api.herokuapp.com";
-const ROOT = `https://${ROOT_DOMAIN}`;
+const WS_HOST = document.location.host;
+const API_ROOT = "/api";
 
 export async function recognize(image: string): Promise<string[]> {
   const data = new FormData();
@@ -14,7 +14,7 @@ export async function recognize(image: string): Promise<string[]> {
     b64toBlob(image.replace("data:image/png;base64,", ""), "image/png")
   );
 
-  const res = await axios.post(`${ROOT}/recognize`, data);
+  const res = await axios.post(`${API_ROOT}/recognize`, data);
   return res.data.FaceMatches.map((match: any) => match.Face.ExternalImageId);
 }
 
@@ -26,7 +26,7 @@ export async function transform(image: string): Promise<string> {
     b64toBlob(image.replace("data:image/png;base64,", ""), "image/png")
   );
 
-  const res = await axios.post(`${ROOT}/transform`, data);
+  const res = await axios.post(`${API_ROOT}/transform`, data);
   return res.data;
 }
 
@@ -41,7 +41,7 @@ export async function createModelForFace(
       try {
         data.append("id", id);
         data.append("file", await imageDataToBlob(item.image, "image/png"));
-        await axios.post(`${ROOT}/faces`, data);
+        await axios.post(`${API_ROOT}/faces`, data);
       } catch (error) {
         console.log("error", error);
       }
@@ -50,7 +50,7 @@ export async function createModelForFace(
 }
 
 export async function getMissingHours(userId: string) {
-  const response = await axios.get(`${ROOT}/missing-hours/${userId}`);
+  const response = await axios.get(`${API_ROOT}/missing-hours/${userId}`);
   return response.data.missing;
 }
 export interface IPerson {
@@ -108,7 +108,7 @@ export async function getPeople(): Promise<IPerson[]> {
 }
 
 export function connectWebsocket() {
-  const ws = new WebSocket(`wss://${ROOT_DOMAIN}`, ["websocket"]);
+  const ws = new WebSocket(`wss://${WS_HOST}/api`, ["websocket"]);
   ws.binaryType = "arraybuffer";
   return ws;
 }
