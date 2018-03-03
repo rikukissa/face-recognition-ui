@@ -2,9 +2,7 @@ import axios from "axios";
 import b64toBlob from "b64-to-blob";
 import { IBufferedDetection } from "./recognition/logic";
 import { imageDataToBlob } from "../utils/image";
-
-const WS_HOST = document.location.host;
-const API_ROOT = "/api";
+import { API_ROOT, WEBSOCKET_ADDRESS } from "../utils/config";
 
 export async function recognize(image: string): Promise<string[]> {
   const data = new FormData();
@@ -108,7 +106,7 @@ export async function getPeople(): Promise<IPerson[]> {
 }
 
 export function connectWebsocket() {
-  const ws = new WebSocket(`wss://${WS_HOST}/api`, ["websocket"]);
+  const ws = new WebSocket(WEBSOCKET_ADDRESS, ["websocket"]);
   ws.binaryType = "arraybuffer";
   return ws;
 }
