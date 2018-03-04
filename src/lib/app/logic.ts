@@ -48,6 +48,13 @@ function isInDashboardView(state: IState, user: string) {
   );
 }
 
+function pushWithSearch(pathname: string) {
+  return push({
+    pathname,
+    search: window.location.search
+  });
+}
+
 export function reducer(
   state: IState = initialState,
   action: Action | RecognitionAction | LocationChangeAction
@@ -64,7 +71,7 @@ export function reducer(
     case RecognitionActionTypes.FACE_RECOGNISED:
       const recognisedSomeone = action.payload.names.length > 0;
       if (!recognisedSomeone && isInHomeView(state)) {
-        return loop(state, Cmd.action(push("/who-is-this")));
+        return loop(state, Cmd.action(pushWithSearch("/who-is-this")));
       }
 
       if (!recognisedSomeone) {
@@ -77,14 +84,17 @@ export function reducer(
         return state;
       }
 
-      return loop(state, Cmd.action(push(`/dashboard/${recognisedUser}`)));
+      return loop(
+        state,
+        Cmd.action(pushWithSearch(`/dashboard/${recognisedUser}`))
+      );
 
     case RecognitionActionTypes.FACE_SAVED:
       return loop(
         state,
         Cmd.list<RecognitionAction | RouterAction>([
           Cmd.action(resetRecognition()),
-          Cmd.action(push(`/`))
+          Cmd.action(pushWithSearch(`/`))
         ])
       );
     case TypeKeys.NAVIGATE_TO_HOME:
@@ -92,7 +102,7 @@ export function reducer(
         { ...state, isAwake: "false" },
         Cmd.list<RecognitionAction | RouterAction>([
           Cmd.action(resetRecognition()),
-          Cmd.action(push(`/`))
+          Cmd.action(pushWithSearch(`/`))
         ])
       );
   }

@@ -13,40 +13,53 @@ import { IFaceRect } from "../../utils/withTracking";
 import { imageDataToURL } from "../../utils/image";
 
 const Debug = styled.div`
-  width: 100%;
-  background: #000;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  display: flex;
 `;
 
 const DebugFaceBuffer = styled.div`
   display: flex;
+  align-content: flex-start;
+  flex-wrap: wrap;
+`;
+const OUTPUT_HEIGHT = 200;
+const BUFFER_OUTPUT_HEIGHT = 100;
+
+const DebugImage = styled.img`
+  height: ${OUTPUT_HEIGHT}px;
 `;
 
 const DebugBufferFrame = styled.div.attrs<{
   rect: IFaceRect;
-  image: string;
+  image: ImageData;
+  scale: number;
 }>({
-  style: ({ image, rect }: { image: string; rect: IFaceRect }) => ({
-    width: `${rect.width + 60}px`,
-    height: `${rect.height + 60}px`,
-    backgroundImage: `url(${image})`,
-    backgroundPosition: `-${rect.x - 30}px -${rect.y - 30}px`
+  style: ({
+    image,
+    rect,
+    scale
+  }: {
+    image: ImageData;
+    rect: IFaceRect;
+    scale: number;
+  }) => ({
+    height: `${BUFFER_OUTPUT_HEIGHT}px`,
+    width: `${rect.width}px`,
+    backgroundImage: `url(${imageDataToURL(image)})`,
+    backgroundSize: `auto ${image.height * scale}px`,
+    backgroundPosition: `-${rect.x}px -${rect.y}px`
   })
 })`
   display: inline-block;
 `;
 
-const DebugCameraContainer = styled.div`
-  display: flex;
-  justify-content: center;
-`;
 const DebugCamera = styled.div`
   position: relative;
 `;
 
-const DebugFooter = styled.div`
-  position: absolute;
-  bottom: 0;
-  left: 0;
+const DebugHeader = styled.div`
   padding: 1em;
   background: #fff;
 `;
@@ -92,42 +105,69 @@ export interface IDispatchProps {
   toggleTracking: () => void;
 }
 
+function scaleRect(rect: IFaceRect, scale: number) {
+  return {
+    x: rect.x * scale,
+    y: rect.y * scale,
+    width: rect.width * scale,
+    height: rect.height * scale
+  };
+}
+
 class DebuggerComponent extends React.Component<IProps & IDispatchProps> {
-  public render() {
-    if (!this.props.latestDetection) {
+  private renderDebugCamera() {
+    const { latestDetection } = this.props;
+    if (!latestDetection) {
       return <div />;
     }
 
+    const scale = OUTPUT_HEIGHT / latestDetection.image.height;
+
+    return (
+      <DebugCamera>
+        <DebugImage src={imageDataToURL(latestDetection.image)} />
+        {latestDetection.data.map((rect, i) => (
+          <DebugSquare
+            {...scaleRect(rect, scale)}
+            firstDetected={rect === this.props.firstFaceDetected}
+            key={i}
+          />
+        ))}
+      </DebugCamera>
+    );
+  }
+  public render() {
+    const { faceBuffer, latestDetection } = this.props;
+
     return (
       <Debug>
-        <DebugCameraContainer>
-          <DebugCamera>
-            <img src={imageDataToURL(this.props.latestDetection.image)} />
-            {this.props.latestDetection.data.map((rect, i) => (
-              <DebugSquare
-                {...rect}
-                firstDetected={rect === this.props.firstFaceDetected}
-                key={i}
-              />
-            ))}
-            <DebugFooter>
-              {this.props.latestDetection.amount} faces
-              <button onClick={this.props.toggleTracking}>
-                {this.props.trackingStoppedForDebugging
-                  ? "resume tracking"
-                  : "pause tracking"}
-              </button>
-            </DebugFooter>
-          </DebugCamera>
-        </DebugCameraContainer>
+        <DebugHeader>
+          <strong>{latestDetection ? latestDetection.amount : 0}</strong> faces
+          currently detected<br />
+          <strong>{faceBuffer.length}</strong> faces in buffer
+          <br />
+          <br />
+          <button onClick={this.props.toggleTracking}>
+            {this.props.trackingStoppedForDebugging
+              ? "resume tracking"
+              : "pause tracking"}
+          </button>
+        </DebugHeader>
+
+        {this.renderDebugCamera()}
+
         <DebugFaceBuffer>
-          {this.props.faceBuffer.map((bufferItem: IBufferedDetection, i) => (
-            <DebugBufferFrame
-              key={i}
-              rect={bufferItem.rect}
-              image={imageDataToURL(bufferItem.image)}
-            />
-          ))}
+          {faceBuffer.map((bufferItem: IBufferedDetection, i) => {
+            const scale = BUFFER_OUTPUT_HEIGHT / bufferItem.rect.height;
+            return (
+              <DebugBufferFrame
+                key={i}
+                scale={scale}
+                rect={scaleRect(bufferItem.rect, scale)}
+                image={bufferItem.image}
+              />
+            );
+          })}
         </DebugFaceBuffer>
       </Debug>
     );
