@@ -15,6 +15,7 @@ import { IState as IPeopleState } from "../../people/logic";
 import { IApplicationState } from "../../../store";
 import { submitFace } from "../../recognition/logic";
 import { navigateToHome } from "../logic";
+import { WHO_IS_THIS_TIMEOUT } from "../../../utils/config";
 
 const CenteredFullscreenText = styled(FullscreenText)`
   text-align: center;
@@ -74,7 +75,10 @@ export class Component extends React.Component<
     if (this.timeout !== null) {
       window.clearTimeout(this.timeout);
     }
-    this.timeout = window.setTimeout(this.props.navigateToHome, 20000);
+    this.timeout = window.setTimeout(
+      this.props.navigateToHome,
+      WHO_IS_THIS_TIMEOUT
+    );
   };
 
   public componentDidMount() {

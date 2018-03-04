@@ -9,3 +9,4 @@ export const WEBSOCKET_ADDRESS = PRODUCTION
   : `ws://${WS_HOST}/api`;
 
 export const DASHBOARD_TIMEOUT = 20000;
+export const WHO_IS_THIS_TIMEOUT = 20000;
