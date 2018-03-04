@@ -1,15 +1,6 @@
-import * as React from "react";
 import { render } from "react-dom";
-import { Provider } from "react-redux";
-import "./index.css";
+import { createApp } from "./app";
 
-import { createStore } from "./store";
+const { app } = createApp();
 
-import App from "./lib/app/container";
-
-render(
-  <Provider store={createStore()}>
-    <App />
-  </Provider>,
-  document.getElementById("root") as HTMLElement
-);
+render(app, document.getElementById("root") as HTMLElement);

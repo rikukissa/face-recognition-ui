@@ -1,6 +1,7 @@
 import * as React from "react";
 import styled from "styled-components";
 import * as annyang from "annyang";
+import { connect } from "react-redux";
 
 import { Speech } from "../../../components/Speech";
 
@@ -11,6 +12,9 @@ import {
   Subtitle
 } from "../../../components/View";
 import { IState as IPeopleState } from "../../people/logic";
+import { IApplicationState } from "../../../store";
+import { submitFace } from "../../recognition/logic";
+import { navigateToHome } from "../logic";
 
 const CenteredFullscreenText = styled(FullscreenText)`
   text-align: center;
@@ -42,20 +46,35 @@ const PersonButton = styled.button`
 
 interface IProps {
   people: IPeopleState["people"];
-  onSave: (name: string) => void;
 }
-
-export class WhoIsThis extends React.Component<IProps, { name: string }> {
+interface IDispatchProps {
+  onSave: (name: string) => void;
+  navigateToHome: () => void;
+}
+export class Component extends React.Component<
+  IProps & IDispatchProps,
+  { name: string }
+> {
+  private timeout: number | null = null;
   private commands: { [key: string]: (param: string) => void } = {};
   public state = {
     name: ""
   };
   private setName = (name: string) => {
+    this.resetTimeout();
     this.setState({ name });
   };
 
   private save = (id: string) => {
+    this.resetTimeout();
     this.props.onSave(id);
+  };
+
+  private resetTimeout = () => {
+    if (this.timeout !== null) {
+      window.clearTimeout(this.timeout);
+    }
+    this.timeout = window.setTimeout(this.props.navigateToHome, 20000);
   };
 
   public componentDidMount() {
@@ -73,9 +92,14 @@ export class WhoIsThis extends React.Component<IProps, { name: string }> {
 
     // Start listening.
     annyang.start();
+
+    this.resetTimeout();
   }
 
   public componentWillUnmount() {
+    if (this.timeout !== null) {
+      window.clearTimeout(this.timeout);
+    }
     annyang.removeCommands(Object.keys(this.commands));
   }
 
@@ -110,3 +134,14 @@ export class WhoIsThis extends React.Component<IProps, { name: string }> {
     );
   }
 }
+
+function mapStateToProps(state: IApplicationState) {
+  return {
+    people: state.people.people
+  };
+}
+
+export const WhoIsThis = connect<IProps, IDispatchProps>(mapStateToProps, {
+  onSave: submitFace,
+  navigateToHome
+})(Component);

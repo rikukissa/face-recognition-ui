@@ -1,12 +1,12 @@
-import * as React from "react";
-import { configure, mount, ReactWrapper } from "enzyme";
+import { configure, mount } from "enzyme";
 import * as Adapter from "enzyme-adapter-react-16";
-import { Store, Provider } from "react-redux";
-import { createStore, IApplicationState } from "../../store";
-import App from "./container";
-import { facesDetected } from "../recognition/logic";
-import { recognize } from "../api";
-import { IFaceRect } from "../../utils/withTracking";
+import { Store } from "react-redux";
+import { IApplicationState } from "./store";
+import { createApp } from "./app";
+import { facesDetected } from "./lib/recognition/logic";
+import { recognize } from "./lib/api";
+import { IFaceRect } from "./utils/withTracking";
+import { DASHBOARD_TIMEOUT } from "./utils/config";
 
 /*
  * Test runner config
@@ -16,21 +16,25 @@ jest.useFakeTimers();
 
 configure({ adapter: new Adapter() });
 
-jest.mock("../../components/Camera", () => "div");
-jest.mock("../../utils/image", () => ({
+jest.mock("./components/Camera", () => "div");
+jest.mock("./utils/image", () => ({
   crop: (image: string, rect: IFaceRect) => Promise.resolve(image)
 }));
-jest.mock("../../utils/withTracking", () => ({
+jest.mock("./utils/withTracking", () => ({
   withTracking: () => () => "div"
 }));
-jest.mock("../../utils/withDisplay", () => ({
+jest.mock("./lib/speech/speak", () => ({
+  sayShit: () => Promise.resolve()
+}));
+jest.mock("./utils/withDisplay", () => ({
   withDisplay: () => () => "div"
 }));
-jest.mock("../../utils/camera", () => () => "div");
-jest.mock("../api", () => ({
+jest.mock("./utils/camera", () => () => "div");
+jest.mock("./lib/api", () => ({
   recognize: jest.fn(),
   getMissingHours: jest.fn(),
-  createModelForFace: () => Promise.resolve()
+  createModelForFace: () => Promise.resolve(),
+  getPeople: () => Promise.resolve([])
 }));
 jest.mock("annyang", () => ({
   addCommands: () => null,
@@ -45,22 +49,21 @@ const TEST_IMAGE = {
   BYTES_PER_ELEMENT: 8
 };
 
-const createView = (store: Store<any>, element: JSX.Element) =>
-  mount(<Provider store={store}>{element}</Provider>);
-
-function createTestApp(element: JSX.Element) {
-  const store = createStore();
-  const view = createView(store, element);
-  return { view, store: store as Store<IApplicationState> };
+function getPathname(store: Store<IApplicationState>) {
+  const location = store.getState().routing.location;
+  return location ? location.pathname : "";
 }
 
 describe("App", () => {
   let store: Store<IApplicationState>;
-  let view: ReactWrapper<any, any>;
+
   beforeEach(async () => {
-    const testApp = createTestApp(<App />);
+    const testApp = createApp();
     store = testApp.store;
-    view = testApp.view;
+
+    // Bind this to a variable if you wanna test if DOM looks right
+    mount(testApp.app);
+
     (recognize as jest.Mock<Promise<string[]>>).mockReturnValue(
       Promise.resolve(["riku"])
     );
@@ -81,7 +84,7 @@ describe("App", () => {
       ]);
     });
     it("shows the personal dashboard", async () => {
-      expect(store.getState().app.currentView).toEqual("dashboard");
+      expect(getPathname(store)).toMatch(/dashboard\/riku/);
     });
     describe("when no faces are recognised again", () => {
       beforeEach(async () => {
@@ -94,11 +97,12 @@ describe("App", () => {
         );
       });
       it("goes back to home view after a while", async () => {
-        jest.runOnlyPendingTimers();
-        expect(store.getState().app.currentView).toEqual("home");
+        await jest.runAllTimers();
+        expect(getPathname(store)).toMatch(/\/$/);
       });
       describe("when face reappers", () => {
         it("doesn't go back if the same face is recognized again", async () => {
+          await jest.runTimersToTime(DASHBOARD_TIMEOUT - 1000);
           for (let i = 0; i < 10; i++) {
             await store.dispatch(
               facesDetected({
@@ -108,9 +112,8 @@ describe("App", () => {
               })
             );
           }
-
-          jest.runOnlyPendingTimers();
-          expect(store.getState().app.currentView).toEqual("dashboard");
+          await jest.runTimersToTime(2000);
+          expect(getPathname(store)).toMatch(/dashboard/);
         });
         it("goes to new person's dashboard if it's not the same face", async () => {
           (recognize as jest.Mock<Promise<string[]>>).mockReturnValue(
@@ -128,8 +131,7 @@ describe("App", () => {
           }
           jest.runOnlyPendingTimers();
 
-          expect(store.getState().app.currentView).toEqual("dashboard");
-          expect(view.text().indexOf("foobar")).toBeGreaterThan(-1);
+          expect(getPathname(store)).toMatch(/dashboard\/foobar/);
         });
       });
     });

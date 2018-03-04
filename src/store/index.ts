@@ -1,5 +1,11 @@
-import { createStore, applyMiddleware, compose } from "redux";
+import { createStore, applyMiddleware, compose, Store } from "redux";
 import { combineReducers, install, StoreCreator } from "redux-loop";
+import {
+  routerReducer,
+  RouterState,
+  routerMiddleware
+} from "react-router-redux";
+import { createBrowserHistory } from "history";
 
 const enhancedCreateStore = createStore as StoreCreator;
 
@@ -16,31 +22,41 @@ import {
 
 import { reducer as people, IState as IPeopleState } from "../lib/people/logic";
 
-import {
-  reducer as app,
-  IState as IAppState,
-  timerMiddleware
-} from "../lib/app/logic";
+import { reducer as app, IState as IAppState } from "../lib/app/logic";
 
 export interface IApplicationState {
   app: IAppState;
   recognition: IRecognitionState;
   missingHours: IMissingHoursState;
   people: IPeopleState;
+  routing: RouterState;
 }
 
-const enhancer = compose(install(), applyMiddleware(timerMiddleware));
+const composeEnhancers =
+  typeof window === "object" &&
+  (window as any).__REDUX_DEVTOOLS_EXTENSION_COMPOSE__
+    ? (window as any).__REDUX_DEVTOOLS_EXTENSION_COMPOSE__({
+        // Specify extension’s options like name, actionsBlacklist, actionsCreators, serialize...
+      })
+    : compose;
 
-export const storeCreator = () =>
-  enhancedCreateStore(
+export const storeCreator = () => {
+  const history = createBrowserHistory();
+  const middleware = routerMiddleware(history);
+  const enhancer = composeEnhancers(install(), applyMiddleware(middleware));
+  const store = enhancedCreateStore(
     combineReducers({
       app,
       recognition,
       people,
-      missingHours
+      missingHours,
+      routing: routerReducer
     }),
     undefined,
     enhancer
-  );
+  ) as Store<IApplicationState>;
+
+  return { store, history };
+};
 
 export { storeCreator as createStore };

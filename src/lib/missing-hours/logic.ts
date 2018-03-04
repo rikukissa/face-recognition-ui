@@ -7,7 +7,7 @@ export enum TypeKeys {
   RESET = "missing-hours/RESET"
 }
 
-type Action =
+export type Action =
   | IMissingHoursLoadedAction
   | IResetMissingHoursAction
   | IMissingHoursRequestedAction;

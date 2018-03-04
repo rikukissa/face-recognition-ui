@@ -135,7 +135,7 @@ interface IResetAction {
   type: TypeKeys.RESET;
 }
 
-export const reset = () => {
+export const reset = (): Action => {
   return {
     type: TypeKeys.RESET
   };
@@ -183,6 +183,7 @@ export interface IState {
   recognitionInProgress: boolean;
   trackingStoppedForDebugging: boolean;
   firstFaceDetected: null | IFaceRect;
+  lastRecognitionAt: null | number;
 }
 
 const initialState = {
@@ -192,7 +193,8 @@ const initialState = {
   faceBuffer: [],
   recognitionInProgress: false,
   trackingStoppedForDebugging: false,
-  firstFaceDetected: null
+  firstFaceDetected: null,
+  lastRecognitionAt: null
 };
 
 export function reducer(state: IState = initialState, action: Action) {
@@ -286,6 +288,7 @@ export function reducer(state: IState = initialState, action: Action) {
       const newState = {
         ...state,
         currentlyRecognized: action.payload.names,
+        lastRecognitionAt: Date.now(),
         recognitionInProgress: false
       };
 
