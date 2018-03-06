@@ -12,15 +12,7 @@ const Container = styled.div`
   background: radial-gradient(ellipse at center, #080a20 0%, #0d0e19 100%);
 `;
 
-export interface IDispatchProps {
-  requestPeople: () => void;
-}
-
-export class App extends React.Component<IDispatchProps> {
-  public componentDidMount() {
-    this.props.requestPeople();
-  }
-
+export class App extends React.Component {
   public render() {
     const greeting = "Salutations, Hacker Man";
     return (

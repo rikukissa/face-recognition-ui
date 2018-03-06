@@ -1,7 +1,6 @@
 import { connect } from "react-redux";
-import { App, IDispatchProps } from "./component";
+import { App } from "./component";
 import { IApplicationState } from "../../store";
-import { requestPeople } from "../people/logic";
 
 function mapStateToProps(
   state: IApplicationState,
@@ -10,11 +9,4 @@ function mapStateToProps(
   return ownProps;
 }
 
-export default connect<{}, IDispatchProps>(
-  mapStateToProps,
-  {
-    requestPeople
-  },
-  null,
-  { pure: false }
-)(App);
+export default connect<{}>(mapStateToProps, null, null, { pure: false })(App);

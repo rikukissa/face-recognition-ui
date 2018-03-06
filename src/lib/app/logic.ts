@@ -5,6 +5,8 @@ import {
   reset as resetRecognition
 } from "../recognition/logic";
 
+import { reset as resetPeople, Action as PeopleAction } from "../people/logic";
+
 import {
   push,
   RouterAction,
@@ -100,8 +102,9 @@ export function reducer(
     case TypeKeys.NAVIGATE_TO_HOME:
       return loop(
         { ...state, isAwake: "false" },
-        Cmd.list<RecognitionAction | RouterAction>([
+        Cmd.list<RecognitionAction | RouterAction | PeopleAction>([
           Cmd.action(resetRecognition()),
+          Cmd.action(resetPeople()),
           Cmd.action(pushWithSearch(`/`))
         ])
       );

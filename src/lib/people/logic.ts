@@ -3,18 +3,24 @@ import { getPeople, IPerson } from "../api";
 
 export enum TypeKeys {
   PEOPLE_REQUESTED = "people/PEOPLE_REQUESTED",
-  PEOPLE_LOADED = "people/PEOPLE_LOADED"
+  PEOPLE_LOADED = "people/PEOPLE_LOADED",
+  RESET = "people/RESET"
 }
 
-type Action = IPeopleLoadedAction | IPeopleRequestedAction;
+export type Action =
+  | IPeopleLoadedAction
+  | IPeopleRequestedAction
+  | IResetPeopleAction;
 
 interface IPeopleRequestedAction {
   type: TypeKeys.PEOPLE_REQUESTED;
+  payload: { name: string };
 }
 
-export function requestPeople(): IPeopleRequestedAction {
+export function requestPeople(name: string): IPeopleRequestedAction {
   return {
-    type: TypeKeys.PEOPLE_REQUESTED
+    type: TypeKeys.PEOPLE_REQUESTED,
+    payload: { name }
   };
 }
 
@@ -29,6 +35,15 @@ function PeopleLoaded(people: IPerson[]): IPeopleLoadedAction {
     payload: { people }
   };
 }
+interface IResetPeopleAction {
+  type: TypeKeys.RESET;
+}
+
+export function reset(): IResetPeopleAction {
+  return {
+    type: TypeKeys.RESET
+  };
+}
 
 export interface IState {
   people: IPerson[];
@@ -40,10 +55,14 @@ const initialState: IState = {
 
 export function reducer(state: IState = initialState, action: Action) {
   switch (action.type) {
+    case TypeKeys.RESET: {
+      return initialState;
+    }
     case TypeKeys.PEOPLE_REQUESTED: {
       return loop(
         { ...state, people: [] },
         Cmd.run(getPeople, {
+          args: [action.payload.name],
           successActionCreator: PeopleLoaded
         })
       );
