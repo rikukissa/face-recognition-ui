@@ -4,7 +4,21 @@ import { IBufferedDetection } from "./recognition/logic";
 import { imageDataToBlob } from "../utils/image";
 import { API_ROOT, WEBSOCKET_ADDRESS } from "../utils/config";
 
-export async function recognize(image: string): Promise<string[]> {
+export interface IPerson {
+  username: string;
+  first: string;
+  last: string;
+  team: string;
+  competence: string;
+  supervisor: string;
+  supervisorName: string;
+  start: string;
+  end?: string;
+  active: string;
+  missingHours: number;
+}
+
+export async function recognize(image: string): Promise<IPerson[]> {
   const data = new FormData();
 
   data.append(
@@ -13,7 +27,7 @@ export async function recognize(image: string): Promise<string[]> {
   );
 
   const res = await axios.post(`${API_ROOT}/recognize`, data);
-  return res.data.FaceMatches.map((match: any) => match.Face.ExternalImageId);
+  return res.data;
 }
 
 export async function transform(image: string): Promise<string> {
@@ -51,21 +65,14 @@ export async function getMissingHours(userId: string) {
   const response = await axios.get(`${API_ROOT}/missing-hours/${userId}`);
   return response.data.missing;
 }
-export interface IPerson {
-  username: string;
-  first: string;
-  last: string;
-  team: string;
-  competence: string;
-  supervisor: string;
-  supervisorName: string;
-  start: string;
-  end?: string;
-  active: string;
-}
 
 export async function getPeople(search: string): Promise<IPerson[]> {
-  const res = await axios.get(`${API_ROOT}/people/${search}`);
+  const res = await axios.get(`${API_ROOT}/people/?q=${search}`);
+  return res.data;
+}
+
+export async function getPerson(username: string): Promise<IPerson> {
+  const res = await axios.get(`${API_ROOT}/people/${username}`);
   return res.data;
 }
 

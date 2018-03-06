@@ -13,6 +13,7 @@ import {
   LOCATION_CHANGE,
   LocationChangeAction
 } from "react-router-redux";
+import { IPerson } from "../api";
 
 export enum TypeKeys {
   NAVIGATE_TO_HOME = "app/NAVIGATE_TO_HOME"
@@ -43,10 +44,10 @@ const initialState: IState = {
 function isInHomeView(state: IState) {
   return state.currentLocation && state.currentLocation.pathname === "/";
 }
-function isInDashboardView(state: IState, user: string) {
+function isInDashboardView(state: IState, user: IPerson) {
   return (
     state.currentLocation &&
-    state.currentLocation.pathname.includes(`dashboard/${user}`)
+    state.currentLocation.pathname.includes(`dashboard/${user.username}`)
   );
 }
 
@@ -71,7 +72,7 @@ export function reducer(
       }
       return state;
     case RecognitionActionTypes.FACE_RECOGNISED:
-      const recognisedSomeone = action.payload.names.length > 0;
+      const recognisedSomeone = action.payload.people.length > 0;
       if (!recognisedSomeone && isInHomeView(state)) {
         return loop(state, Cmd.action(pushWithSearch("/who-is-this")));
       }
@@ -80,7 +81,7 @@ export function reducer(
         return state;
       }
 
-      const recognisedUser = action.payload.names[0];
+      const recognisedUser = action.payload.people[0];
 
       if (isInDashboardView(state, recognisedUser)) {
         return state;
@@ -88,7 +89,7 @@ export function reducer(
 
       return loop(
         state,
-        Cmd.action(pushWithSearch(`/dashboard/${recognisedUser}`))
+        Cmd.action(pushWithSearch(`/dashboard/${recognisedUser.username}`))
       );
 
     case RecognitionActionTypes.FACE_SAVED:

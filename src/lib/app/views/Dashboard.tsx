@@ -6,16 +6,15 @@ import {
   IState as IRecognitionState,
   facesDetected
 } from "../../recognition/logic";
-import {
-  IState as IMissingHoursState,
-  requestMissingHours
-} from "../../missing-hours/logic";
+
 import { Camera } from "../../../components/Camera";
 import { View, FullscreenText, Title } from "../../../components/View";
 import { Speech } from "../../../components/Speech";
 import { IApplicationState } from "../../../store";
 import { navigateToHome } from "../logic";
 import { DASHBOARD_TIMEOUT } from "../../../utils/config";
+import { IPerson } from "../../api";
+import { requestPerson } from "../../people/logic";
 
 const PersonName = styled.h1`
   position: absolute;
@@ -27,23 +26,22 @@ const PersonName = styled.h1`
 const TrackingCamera = withTracking(Camera);
 
 interface IProps {
-  user: string;
+  username: string;
+  person: IPerson | null;
   lastRecognitionAt: null | number;
-  currentlyRecognized: null | string;
-  missingHours: IMissingHoursState["missingHours"];
   trackingStoppedForDebugging: IRecognitionState["trackingStoppedForDebugging"];
 }
 
 interface IDispatchProps {
   onFacesDetected: (event: IDetection) => void;
-  requestMissingHours: (userId: string) => void;
+  requestPerson: (userId: string) => void;
   navigateToHome: () => void;
 }
 
 class Component extends React.Component<IProps & IDispatchProps> {
   private timeout: number | null = null;
   public componentDidMount() {
-    this.props.requestMissingHours(this.props.user);
+    this.props.requestPerson(this.props.username);
     this.resetTimeout();
   }
 
@@ -68,18 +66,23 @@ class Component extends React.Component<IProps & IDispatchProps> {
     );
   };
   public render() {
-    const speechText = this.props.user || "";
+    // TODO loader
+    if (!this.props.person) {
+      return <div />;
+    }
+
+    const speechText = this.props.person.first || "";
     return (
       <View>
-        <PersonName>{this.props.user}</PersonName>
+        <PersonName>{this.props.person.first}</PersonName>
         <Speech text={speechText} />
-        {this.props.missingHours !== null && (
-          <FullscreenText>
-            <Title>
-              You have <strong>{this.props.missingHours}</strong> missing hours
-            </Title>
-          </FullscreenText>
-        )}
+
+        <FullscreenText>
+          <Title>
+            You have <strong>{this.props.person.missingHours}</strong> missing
+            hours
+          </Title>
+        </FullscreenText>
 
         <TrackingCamera
           onFacesDetected={this.props.onFacesDetected}
@@ -92,16 +95,15 @@ class Component extends React.Component<IProps & IDispatchProps> {
 
 function mapStateToProps(state: IApplicationState, ownProps: any) {
   return {
-    user: ownProps.match.params.user,
-    currentlyRecognized: state.recognition.currentlyRecognized[0],
+    username: ownProps.match.params.user,
+    person: state.people.person,
     lastRecognitionAt: state.recognition.lastRecognitionAt,
-    trackingStoppedForDebugging: state.recognition.trackingStoppedForDebugging,
-    missingHours: state.missingHours.missingHours
+    trackingStoppedForDebugging: state.recognition.trackingStoppedForDebugging
   };
 }
 
 export const Dashboard = connect<IProps, IDispatchProps>(mapStateToProps, {
   onFacesDetected: facesDetected,
-  requestMissingHours,
+  requestPerson,
   navigateToHome
 })(Component);

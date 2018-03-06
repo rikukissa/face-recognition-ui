@@ -1,16 +1,44 @@
 import { loop, Cmd } from "redux-loop";
-import { getPeople, IPerson } from "../api";
+import { getPeople, IPerson, getPerson } from "../api";
 
 export enum TypeKeys {
   PEOPLE_REQUESTED = "people/PEOPLE_REQUESTED",
   PEOPLE_LOADED = "people/PEOPLE_LOADED",
+  PERSON_REQUESTED = "people/PERSON_REQUESTED",
+  PERSON_LOADED = "people/PERSON_LOADED",
   RESET = "people/RESET"
 }
 
 export type Action =
   | IPeopleLoadedAction
   | IPeopleRequestedAction
+  | IPersonLoadedAction
+  | IPersonRequestedAction
   | IResetPeopleAction;
+
+interface IPersonRequestedAction {
+  type: TypeKeys.PERSON_REQUESTED;
+  payload: { username: string };
+}
+
+export function requestPerson(username: string): IPersonRequestedAction {
+  return {
+    type: TypeKeys.PERSON_REQUESTED,
+    payload: { username }
+  };
+}
+
+interface IPersonLoadedAction {
+  type: TypeKeys.PERSON_LOADED;
+  payload: { person: IPerson };
+}
+
+function personLoaded(person: IPerson): IPersonLoadedAction {
+  return {
+    type: TypeKeys.PERSON_LOADED,
+    payload: { person }
+  };
+}
 
 interface IPeopleRequestedAction {
   type: TypeKeys.PEOPLE_REQUESTED;
@@ -29,7 +57,7 @@ interface IPeopleLoadedAction {
   payload: { people: IPerson[] };
 }
 
-function PeopleLoaded(people: IPerson[]): IPeopleLoadedAction {
+function peopleLoaded(people: IPerson[]): IPeopleLoadedAction {
   return {
     type: TypeKeys.PEOPLE_LOADED,
     payload: { people }
@@ -47,10 +75,12 @@ export function reset(): IResetPeopleAction {
 
 export interface IState {
   people: IPerson[];
+  person: null | IPerson;
 }
 
 const initialState: IState = {
-  people: []
+  people: [],
+  person: null
 };
 
 export function reducer(state: IState = initialState, action: Action) {
@@ -63,9 +93,21 @@ export function reducer(state: IState = initialState, action: Action) {
         { ...state, people: [] },
         Cmd.run(getPeople, {
           args: [action.payload.name],
-          successActionCreator: PeopleLoaded
+          successActionCreator: peopleLoaded
         })
       );
+    }
+    case TypeKeys.PERSON_REQUESTED: {
+      return loop(
+        { ...state, people: [] },
+        Cmd.run(getPerson, {
+          args: [action.payload.username],
+          successActionCreator: personLoaded
+        })
+      );
+    }
+    case TypeKeys.PERSON_LOADED: {
+      return { ...state, person: action.payload.person };
     }
     case TypeKeys.PEOPLE_LOADED: {
       return { ...state, people: action.payload.people };

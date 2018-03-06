@@ -1,4 +1,4 @@
-import { createModelForFace, recognize } from "../api";
+import { createModelForFace, recognize, IPerson } from "../api";
 // TODO feels a bit nasty to refer to the event type from here
 import { IDetection, IFaceRect } from "../../utils/withTracking";
 import { loop, Cmd } from "redux-loop";
@@ -52,13 +52,13 @@ export function facesDetected(detection: IDetection): IFacesDetectedAction {
 
 interface IFacesRecognisedAction {
   type: TypeKeys.FACE_RECOGNISED;
-  payload: { names: string[] };
+  payload: { people: IPerson[] };
 }
 
-function facesRecognised(names: string[]): Action {
+function facesRecognised(people: IPerson[]): Action {
   return {
     type: TypeKeys.FACE_RECOGNISED,
-    payload: { names }
+    payload: { people }
   };
 }
 
@@ -177,7 +177,7 @@ function originalFaceStillInPicture(
  */
 export interface IState {
   latestDetection: null | IDetection;
-  currentlyRecognized: string[];
+  currentlyRecognized: IPerson[];
   currentNumberOfFaces: null | number;
   faceBuffer: IBufferedDetection[];
   recognitionInProgress: boolean;
@@ -281,13 +281,15 @@ export function reducer(state: IState = initialState, action: Action) {
     }
 
     case TypeKeys.FACE_RECOGNISED: {
-      const existingFaces = action.payload.names.filter(
-        name => state.currentlyRecognized.indexOf(name) > -1
+      const existingFaces = action.payload.people.filter(user =>
+        state.currentlyRecognized.some(
+          ({ username }) => user.username === username
+        )
       );
 
       const newState = {
         ...state,
-        currentlyRecognized: action.payload.names,
+        currentlyRecognized: action.payload.people,
         lastRecognitionAt: Date.now(),
         recognitionInProgress: false
       };

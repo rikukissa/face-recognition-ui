@@ -15,11 +15,6 @@ import {
   IState as IRecognitionState
 } from "../lib/recognition/logic";
 
-import {
-  reducer as missingHours,
-  IState as IMissingHoursState
-} from "../lib/missing-hours/logic";
-
 import { reducer as people, IState as IPeopleState } from "../lib/people/logic";
 
 import { reducer as app, IState as IAppState } from "../lib/app/logic";
@@ -27,7 +22,6 @@ import { reducer as app, IState as IAppState } from "../lib/app/logic";
 export interface IApplicationState {
   app: IAppState;
   recognition: IRecognitionState;
-  missingHours: IMissingHoursState;
   people: IPeopleState;
   routing: RouterState;
 }
@@ -49,7 +43,6 @@ export const storeCreator = () => {
       app,
       recognition,
       people,
-      missingHours,
       routing: routerReducer
     }),
     undefined,
