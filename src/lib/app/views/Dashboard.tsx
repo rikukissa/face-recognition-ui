@@ -8,7 +8,7 @@ import {
 } from "../../recognition/logic";
 
 import { Camera } from "../../../components/Camera";
-import { View, FullscreenText, Title } from "../../../components/View";
+import { View } from "../../../components/View";
 import { Speech } from "../../../components/Speech";
 import { IApplicationState } from "../../../store";
 import { navigateToHome } from "../logic";
@@ -16,12 +16,85 @@ import { DASHBOARD_TIMEOUT } from "../../../utils/config";
 import { IPerson } from "../../api";
 import { requestPerson } from "../../people/logic";
 
-const PersonName = styled.h1`
-  position: absolute;
-  background: #000;
-  color: #fff;
-  margin: 1em;
+const PersonName = styled.div`
+  font-size: 50px;
 `;
+
+const Avatar = styled.div.attrs<{ src: string }>({})`
+  width: 100px;
+  height: 100px;
+  background: url(${({ src }) => src});
+  background-size: cover;
+  border-radius: 50px;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 0.5em;
+`;
+
+const Text = styled.span``;
+
+const Grid = styled.div`
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(45deg, rgb(84, 55, 93) 0%, rgba(0, 0, 0, 0) 100%);
+`;
+
+const Row = styled.div`
+  display: flex;
+  :not(:last-child) {
+    box-shadow: inset 0px -1px 1px -1px rgba(255, 255, 255, 0.4);
+  }
+`;
+
+const Item = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  flex-grow: 1;
+  font-size: 30px;
+  padding: 1em;
+  text-align: center;
+  font-weight: 200;
+  color: #fff;
+`;
+
+const ItemValue = styled.div`
+  strong {
+    font-size: 60px;
+    display: block;
+    font-weight: 400;
+  }
+`;
+
+const PersonItem = styled(Item)`
+  align-items: flex-start;
+`;
+const HoursItem = styled(Item)`
+  background: #31c4c7;
+  color: #2d3a62;
+  box-shadow: 0px 2px 2px rgba(0, 0, 0, 0);
+  flex-grow: 0;
+`;
+
+const CalendarItem = styled(Item)`
+  flex-direction: row;
+  ${ItemValue} {
+    flex-grow: 0;
+  }
+`;
+
+const ItemContent = styled.div`
+  flex-grow: 1;
+  text-align: left;
+  padding-left: 2em;
+  font-size: 24px;
+`;
+
+const EventName = styled.div`
+  font-weight: 400;
+`;
+const EventLocation = styled.div``;
 
 const TrackingCamera = withTracking(Camera);
 
@@ -74,15 +147,49 @@ class Component extends React.Component<IProps & IDispatchProps> {
     const speechText = this.props.person.first || "";
     return (
       <View>
-        <PersonName>{this.props.person.first}</PersonName>
         <Speech text={speechText} />
+        <Grid>
+          <Row>
+            <PersonItem>
+              <PersonName>
+                <Avatar src="https://avatars3.githubusercontent.com/u/1206987?s=460&v=4" />
+                <Text>{this.props.person.first}</Text>
+              </PersonName>
+            </PersonItem>
 
-        <FullscreenText>
-          <Title>
-            You have <strong>{this.props.person.missingHours}</strong> missing
-            hours
-          </Title>
-        </FullscreenText>
+            <HoursItem>
+              <ItemValue>
+                <strong>{this.props.person.missingHours}</strong>
+                missing hours
+              </ItemValue>
+            </HoursItem>
+          </Row>
+          <Row>
+            <CalendarItem>
+              <ItemValue>
+                <strong>10</strong> minutes<br />
+              </ItemValue>
+              <ItemContent>
+                <EventName>Tech 15 minutes</EventName>
+                <EventLocation>
+                  Futurice Ltd. 4th floor, 26-28 Underwood St, Hoxton, London N1
+                  7JQ, UK
+                </EventLocation>
+              </ItemContent>
+            </CalendarItem>
+          </Row>
+          <Row>
+            <CalendarItem>
+              <ItemValue>
+                <strong>4.15</strong>pm<br />
+              </ItemValue>
+              <ItemContent>
+                <EventName>Recruitment catch-up</EventName>
+                <EventLocation>Boardroom</EventLocation>
+              </ItemContent>
+            </CalendarItem>
+          </Row>
+        </Grid>
 
         <TrackingCamera
           onFacesDetected={this.props.onFacesDetected}

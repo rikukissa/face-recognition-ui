@@ -3,6 +3,9 @@ import styled from "styled-components";
 
 export const View = styled.div`
   height: 100%;
+  overflow: auto;
+  padding: 50px;
+  box-sizing: border-box;
 `;
 
 const FullscreenTextContainer = styled.div`
