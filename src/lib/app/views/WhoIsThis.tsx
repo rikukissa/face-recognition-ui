@@ -11,7 +11,7 @@ import {
   Title,
   Subtitle
 } from "../../../components/View";
-import { IState as IPeopleState, requestPeople } from "../../people/logic";
+import { IState as IPeopleState, searchPeople } from "../../people/logic";
 import { IApplicationState } from "../../../store";
 import { submitFace } from "../../recognition/logic";
 import { navigateToHome } from "../logic";
@@ -51,7 +51,7 @@ interface IProps {
 interface IDispatchProps {
   onSave: (name: string) => void;
   navigateToHome: () => void;
-  requestPeople: (name: string) => void;
+  searchPeople: (name: string) => void;
 }
 export class Component extends React.Component<
   IProps & IDispatchProps,
@@ -65,7 +65,7 @@ export class Component extends React.Component<
   private setName = (name: string) => {
     this.resetTimeout();
     this.setState({ name });
-    this.props.requestPeople(name);
+    this.props.searchPeople(name);
   };
 
   private save = (id: string) => {
@@ -150,5 +150,5 @@ function mapStateToProps(state: IApplicationState) {
 export const WhoIsThis = connect<IProps, IDispatchProps>(mapStateToProps, {
   onSave: submitFace,
   navigateToHome,
-  requestPeople
+  searchPeople
 })(Component);

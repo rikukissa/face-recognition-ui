@@ -8,6 +8,15 @@ import { recognize } from "./lib/api";
 import { IFaceRect } from "./utils/withTracking";
 import { DASHBOARD_TIMEOUT } from "./utils/config";
 
+const mockRecognition = [
+  {
+    username: "rrou",
+    first: "Riku",
+    last: "Rouvila",
+    office: "London",
+    missingHours: 0
+  }
+];
 /*
  * Test runner config
  */
@@ -34,8 +43,10 @@ jest.mock("./lib/api", () => ({
   recognize: jest.fn(),
   getMissingHours: jest.fn(),
   createModelForFace: () => Promise.resolve(),
-  getPeople: () => Promise.resolve([])
+  getPeople: () => Promise.resolve([]),
+  getPerson: () => Promise.resolve(mockRecognition[0])
 }));
+
 jest.mock("annyang", () => ({
   addCommands: () => null,
   removeCommands: () => null,
@@ -65,7 +76,7 @@ describe("App", () => {
     mount(testApp.app);
 
     (recognize as jest.Mock<Promise<string[]>>).mockReturnValue(
-      Promise.resolve(["riku"])
+      Promise.resolve(mockRecognition)
     );
   });
   describe("when face is recognized", () => {
@@ -79,12 +90,12 @@ describe("App", () => {
           })
         );
       }
-      expect(store.getState().recognition.currentlyRecognized).toEqual([
-        "riku"
-      ]);
+      expect(store.getState().recognition.currentlyRecognized).toEqual(
+        mockRecognition
+      );
     });
     it("shows the personal dashboard", async () => {
-      expect(getPathname(store)).toMatch(/dashboard\/riku/);
+      expect(getPathname(store)).toMatch(/dashboard\/rrou/);
     });
     describe("when no faces are recognised again", () => {
       beforeEach(async () => {
@@ -117,7 +128,7 @@ describe("App", () => {
         });
         it("goes to new person's dashboard if it's not the same face", async () => {
           (recognize as jest.Mock<Promise<string[]>>).mockReturnValue(
-            Promise.resolve(["foobar"])
+            Promise.resolve([{ ...mockRecognition[0], username: "foobar" }])
           );
 
           for (let i = 0; i < 10; i++) {
@@ -176,9 +187,9 @@ describe("App", () => {
           })
         );
       }
-      expect(store.getState().recognition.currentlyRecognized).toEqual([
-        "riku"
-      ]);
+      expect(store.getState().recognition.currentlyRecognized).toEqual(
+        mockRecognition
+      );
     });
   });
 });

@@ -5,8 +5,8 @@ import {
   Action as RecognitionAction
 } from "../recognition/logic";
 export enum TypeKeys {
-  PEOPLE_REQUESTED = "people/PEOPLE_REQUESTED",
-  PEOPLE_LOADED = "people/PEOPLE_LOADED",
+  PEOPLE_SEARCH_REQUESTED = "people/PEOPLE_SEARCH_REQUESTED",
+  PEOPLE_SEARCH_LOADED = "people/PEOPLE_SEARCH_LOADED",
   PERSON_REQUESTED = "people/PERSON_REQUESTED",
   PERSON_LOADED = "people/PERSON_LOADED",
   RESET = "people/RESET"
@@ -14,7 +14,7 @@ export enum TypeKeys {
 
 export type Action =
   | IPeopleLoadedAction
-  | IPeopleRequestedAction
+  | IPeopleSearchedAction
   | IPersonLoadedAction
   | IPersonRequestedAction
   | IResetPeopleAction;
@@ -43,26 +43,26 @@ function personLoaded(person: IPerson): IPersonLoadedAction {
   };
 }
 
-interface IPeopleRequestedAction {
-  type: TypeKeys.PEOPLE_REQUESTED;
+interface IPeopleSearchedAction {
+  type: TypeKeys.PEOPLE_SEARCH_REQUESTED;
   payload: { name: string };
 }
 
-export function requestPeople(name: string): IPeopleRequestedAction {
+export function searchPeople(name: string): IPeopleSearchedAction {
   return {
-    type: TypeKeys.PEOPLE_REQUESTED,
+    type: TypeKeys.PEOPLE_SEARCH_REQUESTED,
     payload: { name }
   };
 }
 
 interface IPeopleLoadedAction {
-  type: TypeKeys.PEOPLE_LOADED;
+  type: TypeKeys.PEOPLE_SEARCH_LOADED;
   payload: { people: IPerson[] };
 }
 
 function peopleLoaded(people: IPerson[]): IPeopleLoadedAction {
   return {
-    type: TypeKeys.PEOPLE_LOADED,
+    type: TypeKeys.PEOPLE_SEARCH_LOADED,
     payload: { people }
   };
 }
@@ -86,7 +86,10 @@ const initialState: IState = {
   person: null
 };
 
-export function reducer(state: IState = initialState, action: Action | RecognitionAction) {
+export function reducer(
+  state: IState = initialState,
+  action: Action | RecognitionAction
+) {
   switch (action.type) {
     case TypeKeys.RESET: {
       return initialState;
@@ -100,7 +103,7 @@ export function reducer(state: IState = initialState, action: Action | Recognit
 
       return { ...state, person: action.payload.people[0] };
 
-    case TypeKeys.PEOPLE_REQUESTED: {
+    case TypeKeys.PEOPLE_SEARCH_REQUESTED: {
       return loop(
         { ...state, people: [] },
         Cmd.run(getPeople, {
@@ -121,7 +124,7 @@ export function reducer(state: IState = initialState, action: Action | Recognit
     case TypeKeys.PERSON_LOADED: {
       return { ...state, person: action.payload.person };
     }
-    case TypeKeys.PEOPLE_LOADED: {
+    case TypeKeys.PEOPLE_SEARCH_LOADED: {
       return { ...state, people: action.payload.people };
     }
   }
