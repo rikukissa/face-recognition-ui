@@ -67,7 +67,9 @@ export async function getMissingHours(userId: string) {
 }
 
 export async function getPeople(search: string): Promise<IPerson[]> {
-  const res = await axios.get(`${API_ROOT}/people/?q=${search}`);
+  const res = await axios.get(
+    `${API_ROOT}/people/?name=${search}&office=London`
+  );
   return res.data;
 }
 
