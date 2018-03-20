@@ -5,7 +5,7 @@ import { loop, Cmd } from "redux-loop";
 import { crop } from "../../utils/image";
 import { getBestImageFromBuffer } from "./utils";
 
-export const FACE_BUFFER_SIZE = 2;
+export const FACE_BUFFER_SIZE = 1;
 
 export type Action =
   | IFacesRecognisedAction
