@@ -1,6 +1,9 @@
 import { loop, Cmd } from "redux-loop";
 import { getPeople, IPerson, getPerson } from "../api";
-
+import {
+  TypeKeys as RecognitionActionTypes,
+  Action as RecognitionAction
+} from "../recognition/logic";
 export enum TypeKeys {
   PEOPLE_REQUESTED = "people/PEOPLE_REQUESTED",
   PEOPLE_LOADED = "people/PEOPLE_LOADED",
@@ -83,11 +86,20 @@ const initialState: IState = {
   person: null
 };
 
-export function reducer(state: IState = initialState, action: Action) {
+export function reducer(state: IState = initialState, action: Action | RecognitionAction) {
   switch (action.type) {
     case TypeKeys.RESET: {
       return initialState;
     }
+    case RecognitionActionTypes.FACE_RECOGNISED:
+      const recognisedSomeone = action.payload.people.length > 0;
+
+      if (!recognisedSomeone) {
+        return state;
+      }
+
+      return { ...state, person: action.payload.people[0] };
+
     case TypeKeys.PEOPLE_REQUESTED: {
       return loop(
         { ...state, people: [] },
